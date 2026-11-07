@@ -9,6 +9,7 @@ import { Check } from '@phosphor-icons/react/dist/csr/Check';
 import { Kanban } from '@phosphor-icons/react/dist/csr/Kanban';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
+import { useClickGuard } from '../hooks/useClickGuard';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { SCHOLARSHIPS } from '../data/scholarships';
 import type { TrackerStatus } from '../types';
@@ -31,6 +32,7 @@ export const TrackerPage: React.FC = () => {
   } = useApp();
 
   const { showToast } = useToast();
+  const { runGuarded, isGuarded } = useClickGuard(400);
 
   const [activeMobileTab, setActiveMobileTab] = useState<TrackerStatus>('applying');
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -71,12 +73,18 @@ export const TrackerPage: React.FC = () => {
     e.preventDefault();
     const id = e.dataTransfer.getData('text/plain') || draggedId;
     if (id) {
+      const currentStatus = trackerItems[id]?.status;
+      if (currentStatus === targetCol) {
+        setDraggedId(null);
+        setDragOverColumn(null);
+        return; // Idempotent no-op
+      }
       setTrackerStatus(id, targetCol);
       if (targetCol === 'awarded') {
         fireAwardedConfetti();
-        showToast('Scholarship marked as Awarded! Congratulations on your educational grant.', 'success');
+        showToast('Scholarship marked as Awarded! Congratulations on your educational grant.', 'success', `status-${id}`);
       } else {
-        showToast(`Moved docket entry to "${targetCol.toUpperCase()}"`, 'success');
+        showToast(`Moved docket entry to "${targetCol.toUpperCase()}"`, 'success', `status-${id}`);
       }
     }
     setDraggedId(null);
@@ -84,12 +92,16 @@ export const TrackerPage: React.FC = () => {
   };
 
   const handleStatusSelectChange = (scholarshipId: string, newStatus: TrackerStatus) => {
+    const currentStatus = trackerItems[scholarshipId]?.status;
+    if (currentStatus === newStatus) {
+      return; // Idempotent no-op
+    }
     setTrackerStatus(scholarshipId, newStatus);
     if (newStatus === 'awarded') {
       fireAwardedConfetti();
-      showToast('Scholarship marked as Awarded! Congratulations on your educational grant.', 'success');
+      showToast('Scholarship marked as Awarded! Congratulations on your educational grant.', 'success', `status-${scholarshipId}`);
     } else {
-      showToast(`Docket status updated to "${newStatus.toUpperCase()}"`, 'success');
+      showToast(`Docket status updated to "${newStatus.toUpperCase()}"`, 'success', `status-${scholarshipId}`);
     }
   };
 
@@ -100,9 +112,18 @@ export const TrackerPage: React.FC = () => {
   };
 
   const handleSaveNote = (scholarshipId: string) => {
-    updateTrackerNote(scholarshipId, noteText);
-    setEditingNoteId(null);
-    showToast('Docket application note saved', 'success');
+    runGuarded(`note-${scholarshipId}`, () => {
+      updateTrackerNote(scholarshipId, noteText);
+      setEditingNoteId(null);
+      showToast('Docket application note saved', 'success', `note-${scholarshipId}`);
+    });
+  };
+
+  const handleRemoveScholarship = (scholarshipId: string) => {
+    runGuarded(`remove-${scholarshipId}`, () => {
+      removeFromTracker(scholarshipId);
+      showToast('Scholarship removed from application docket', 'info', `track-${scholarshipId}`);
+    });
   };
 
   return (
@@ -236,8 +257,9 @@ export const TrackerPage: React.FC = () => {
                             </span>
                             <button
                               type="button"
-                              onClick={() => removeFromTracker(sch.id)}
-                              className="text-muted hover:text-danger p-0.5 rounded-[2px] transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center"
+                              disabled={isGuarded(`remove-${sch.id}`)}
+                              onClick={() => handleRemoveScholarship(sch.id)}
+                              className="text-muted hover:text-danger p-0.5 rounded-[2px] transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center disabled:opacity-50"
                               title="Remove from docket"
                               aria-label={`Remove ${sch.name} from docket`}
                             >
@@ -306,8 +328,9 @@ export const TrackerPage: React.FC = () => {
                                   </button>
                                   <button
                                     type="button"
+                                    disabled={isGuarded(`note-${sch.id}`)}
                                     onClick={() => handleSaveNote(sch.id)}
-                                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary text-primary-contrast rounded-[2px] min-h-[32px]"
+                                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary text-primary-contrast rounded-[2px] min-h-[32px] disabled:opacity-50"
                                   >
                                     <Check size={12} /> Save
                                   </button>

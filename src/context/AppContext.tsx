@@ -14,10 +14,10 @@ interface AppContextType {
   updateProfile: (updated: Partial<UserProfile>) => void;
   resetProfile: () => void;
   savedIds: string[];
-  toggleSave: (scholarshipId: string) => void;
+  toggleSave: (scholarshipId: string) => boolean;
   isSaved: (scholarshipId: string) => boolean;
   trackerItems: Record<string, TrackerItem>;
-  setTrackerStatus: (scholarshipId: string, status: TrackerStatus, notes?: string) => void;
+  setTrackerStatus: (scholarshipId: string, status: TrackerStatus, notes?: string) => boolean;
   updateTrackerNote: (scholarshipId: string, notes: string) => void;
   removeFromTracker: (scholarshipId: string) => void;
   getTrackerStatus: (scholarshipId: string) => TrackerStatus | undefined;
@@ -170,7 +170,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfile(DEMO_PROFILE);
   };
 
-  const toggleSave = (scholarshipId: string) => {
+  const toggleSave = (scholarshipId: string): boolean => {
+    const isCurrentlySaved = savedIds.includes(scholarshipId);
+    const willBeSaved = !isCurrentlySaved;
     setSavedIds(prev => {
       if (prev.includes(scholarshipId)) {
         return prev.filter(id => id !== scholarshipId);
@@ -178,11 +180,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return [...prev, scholarshipId];
       }
     });
+    return willBeSaved;
   };
 
   const isSaved = (scholarshipId: string) => savedIds.includes(scholarshipId);
 
-  const setTrackerStatus = (scholarshipId: string, status: TrackerStatus, notes?: string) => {
+  const setTrackerStatus = (scholarshipId: string, status: TrackerStatus, notes?: string): boolean => {
+    const existing = trackerItems[scholarshipId];
+    if (existing && existing.status === status && notes === undefined) {
+      return false; // Idempotent no-op
+    }
     setTrackerItems(prev => ({
       ...prev,
       [scholarshipId]: {
@@ -192,6 +199,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notes: notes !== undefined ? notes : prev[scholarshipId]?.notes,
       }
     }));
+    return true;
   };
 
   const updateTrackerNote = (scholarshipId: string, notes: string) => {

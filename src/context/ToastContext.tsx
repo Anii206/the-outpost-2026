@@ -6,7 +6,7 @@ import { useTheme } from './ThemeContext';
 export type ToastType = 'success' | 'info' | 'warning';
 
 interface ToastContextType {
-  showToast: (message: string, type?: ToastType) => void;
+  showToast: (message: string, type?: ToastType, id?: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -14,19 +14,17 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isDarkMode } = useTheme();
 
-  const showToast = useCallback((message: string, type: ToastType = 'success') => {
+  const showToast = useCallback((message: string, type: ToastType = 'success', id?: string) => {
+    const opts = {
+      duration: 2500,
+      ...(id ? { id } : {}),
+    };
     if (type === 'success') {
-      toast.success(message, {
-        duration: 3200,
-      });
+      toast.success(message, opts);
     } else if (type === 'warning') {
-      toast.warning(message, {
-        duration: 4000,
-      });
+      toast.warning(message, opts);
     } else {
-      toast.info(message, {
-        duration: 3200,
-      });
+      toast.info(message, opts);
     }
   }, []);
 
@@ -36,7 +34,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       <Toaster
         theme={isDarkMode ? 'dark' : 'light'}
         position="bottom-right"
-        offset={20}
+        visibleToasts={1}
+        duration={2500}
+        offset={92}
         gap={8}
         toastOptions={{
           style: {

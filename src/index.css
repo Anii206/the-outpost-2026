@@ -11,6 +11,7 @@
   --text-muted: #6B655A;
   --border: rgba(27, 26, 23, 0.16);
   --border-strong: rgba(27, 26, 23, 0.32);
+  --slider-track: rgba(27, 26, 23, 0.22);
   --primary: #1F4D3A;
   --primary-contrast: #FBF8F1;
   --accent: #D9401F;
@@ -30,6 +31,7 @@
   --text-muted: #A39C8C;
   --border: rgba(242, 236, 221, 0.16);
   --border-strong: rgba(242, 236, 221, 0.32);
+  --slider-track: rgba(242, 236, 221, 0.28);
   --primary: #7FBF9E;
   --primary-contrast: #14120F;
   --accent: #FF6B45;
@@ -88,7 +90,7 @@ h1, h2, h3, .font-editorial {
 }
 
 /* Base form controls styling in both modes */
-input, select, textarea {
+input:not([type="range"]), select, textarea {
   color: var(--text);
   background-color: var(--surface);
   border-color: var(--border);
@@ -100,7 +102,7 @@ input::placeholder, textarea::placeholder {
   opacity: 0.85;
 }
 
-input:focus-visible, select:focus-visible, textarea:focus-visible {
+input:not([type="range"]):focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
   border-color: var(--primary);
@@ -109,11 +111,124 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 input[type="checkbox"], input[type="radio"] {
   accent-color: var(--primary);
   border-radius: 2px;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+select option {
+  background-color: var(--surface);
+  color: var(--text);
 }
 
 input:disabled, select:disabled, textarea:disabled, button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Range Slider Styling (Light & Dark mode, WebKit & Firefox)
+   - 6px track in a visible muted colour (--slider-track)
+   - Filled part in primary colour via --fill CSS variable
+   - 20px primary thumb with surface-coloured border and focus ring
+   - Zero transitions to eliminate drag lag and glitching
+   ========================================================================== */
+input[type="range"],
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--primary) 0%,
+    var(--primary) var(--fill, 0%),
+    var(--slider-track) var(--fill, 0%),
+    var(--slider-track) 100%
+  );
+  outline: none;
+  border: none;
+  padding: 0;
+  margin: 6px 0;
+  cursor: pointer;
+  vertical-align: middle;
+  touch-action: pan-y;
+  user-select: none;
+  transition: none !important;
+}
+
+/* WebKit Track: transparent so the input's linear-gradient is visible */
+input[type="range"]::-webkit-slider-runnable-track,
+.range-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: transparent;
+  border: none;
+  transition: none !important;
+}
+
+/* WebKit Thumb: 20px primary thumb with surface-coloured border (zero transition) */
+input[type="range"]::-webkit-slider-thumb,
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  border: 2.5px solid var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border);
+  cursor: pointer;
+  margin-top: -7px; /* (6px track - 20px thumb) / 2 = -7px to center */
+  transition: none !important;
+}
+
+/* Firefox Track: muted colour */
+input[type="range"]::-moz-range-track,
+.range-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--slider-track);
+  border: none;
+  transition: none !important;
+}
+
+/* Firefox Fill / Progress: primary colour */
+input[type="range"]::-moz-range-progress,
+.range-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 9999px;
+  background-color: var(--primary);
+  border: none;
+  transition: none !important;
+}
+
+/* Firefox Thumb: 20px primary thumb with surface-coloured border */
+input[type="range"]::-moz-range-thumb,
+.range-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  border: 2.5px solid var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: none !important;
+}
+
+/* Accessible focus ring for range inputs */
+input[type="range"]:focus-visible,
+.range-slider:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
 }
 
 /* Accessible focus visible outlines */

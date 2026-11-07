@@ -7,7 +7,8 @@ import { ArrowsDownUp } from '@phosphor-icons/react/dist/csr/ArrowsDownUp';
 import { ArrowRight } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { Sparkle } from '@phosphor-icons/react/dist/csr/Sparkle';
 import { Clock } from '@phosphor-icons/react/dist/csr/Clock';
-import { getScholarships } from '../services/api';
+import { getAllScholarships } from '../services/api';
+import { SCHOLARSHIPS } from '../data/scholarships';
 import type { FilterState, Scholarship, ScholarshipCategory } from '../types';
 import { useApp } from '../context/AppContext';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -42,34 +43,34 @@ export const DiscoverPage: React.FC = () => {
     sortBy: 'match-desc',
   });
 
-  const [scholarshipsList, setScholarshipsList] = useState<Scholarship[]>([]);
+  const [allScholarships, setAllScholarships] = useState<Scholarship[]>([]);
   const [onlySaved, setOnlySaved] = useState(false);
   const [onlyHighMatch, setOnlyHighMatch] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [isFinderOpen, setIsFinderOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch scholarships through promise-based API with loading skeleton
+  // Fetch initial scholarships once on mount through promise-based API with loading skeleton
   useEffect(() => {
     let isMounted = true;
-    Promise.resolve().then(() => {
-      if (isMounted) setIsLoading(true);
-    });
-
-    getScholarships(filters)
+    getAllScholarships()
       .then((data) => {
         if (isMounted) {
-          setScholarshipsList(data);
+          setAllScholarships(data);
+          setIsLoading(false);
         }
       })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
+      .catch(() => {
+        if (isMounted) {
+          setAllScholarships(SCHOLARSHIPS);
+          setIsLoading(false);
+        }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [filters]);
+  }, []);
 
   // Quick search shortcut: '/' focuses search input
   useEffect(() => {
@@ -127,41 +128,111 @@ export const DiscoverPage: React.FC = () => {
     setOnlyHighMatch(false);
   };
 
-  // Filter & Sort computation on client for saved and match status
+  // Synchronous in-memory filter & sort computation over in-memory list (useMemo)
   const filteredScholarships = useMemo(() => {
-    return scholarshipsList
-      .filter((item) => {
-        if (onlySaved && !isSaved(item.id)) {
-          return false;
-        }
-        if (onlyHighMatch) {
-          const match = calculateMatch(item);
-          if (match.score < 75) return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        if (filters.sortBy === 'match-desc') {
-          const matchA = calculateMatch(a).score;
-          const matchB = calculateMatch(b).score;
-          return matchB - matchA;
-        }
-        return 0;
-      });
-  }, [scholarshipsList, onlySaved, onlyHighMatch, isSaved, calculateMatch, filters.sortBy]);
+    let list = allScholarships.length > 0 ? allScholarships : SCHOLARSHIPS;
 
-  // Identify schemes closing this week (<= 7 days or <= 14 days)
+    // Search query
+    if (filters.search && filters.search.trim()) {
+      const q = filters.search.toLowerCase();
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.provider.toLowerCase().includes(q) ||
+          s.description.toLowerCase().includes(q) ||
+          s.tags.some((t) => t.toLowerCase().includes(q)) ||
+          s.category.toLowerCase().includes(q)
+      );
+    }
+
+    // Education Level
+    if (filters.level && filters.level !== 'All Levels') {
+      const selectedLevel = filters.level;
+      list = list.filter((s) => {
+        const allowed = s.eligibilityRules.allowedLevels;
+        return (
+          s.level === 'All Levels' ||
+          s.level === selectedLevel ||
+          allowed.includes('All Levels') ||
+          allowed.includes(selectedLevel)
+        );
+      });
+    }
+
+    // Scholarship Category
+    if (filters.category && filters.category !== 'All Categories') {
+      const selectedCategory = filters.category;
+      list = list.filter((s) => s.category === selectedCategory);
+    }
+
+    // State / Domicile
+    if (filters.state && filters.state !== 'All India') {
+      const selectedState = filters.state;
+      list = list.filter((s) => {
+        const targetStates = s.eligibilityRules.targetStates || ['All India'];
+        return targetStates.includes('All India') || targetStates.includes(selectedState);
+      });
+    }
+
+    // Minimum Award in INR
+    if (typeof filters.minAmount === 'number' && filters.minAmount > 0) {
+      list = list.filter((s) => s.amount >= filters.minAmount);
+    }
+
+    // Deadline Window
+    if (filters.deadlineRange && filters.deadlineRange !== 'all') {
+      const range = filters.deadlineRange as string;
+      list = list.filter((s) => {
+        const days = getDaysRemaining(s.deadline);
+        if (days < 0) return false;
+        if (range === 'week') return days <= 7;
+        if (range === 'month' || range === '30-days') return days <= 30;
+        if (range === '60-days') return days <= 60;
+        if (range === '90-days') return days <= 90;
+        if (range === 'quarter') return days >= 90;
+        return true;
+      });
+    }
+
+    // Quick Toggles: Saved & High Match
+    if (onlySaved) {
+      list = list.filter((item) => isSaved(item.id));
+    }
+    if (onlyHighMatch) {
+      list = list.filter((item) => calculateMatch(item).score >= 75);
+    }
+
+    // Sorting
+    const sorted = [...list];
+    if (filters.sortBy === 'match-desc') {
+      sorted.sort((a, b) => calculateMatch(b).score - calculateMatch(a).score);
+    } else if (filters.sortBy === 'deadline-asc') {
+      sorted.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+    } else if (filters.sortBy === 'amount-desc') {
+      sorted.sort((a, b) => b.amount - a.amount);
+    } else if (filters.sortBy === 'amount-asc') {
+      sorted.sort((a, b) => a.amount - b.amount);
+    } else if (filters.sortBy === 'name-asc') {
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return sorted;
+  }, [allScholarships, filters, onlySaved, onlyHighMatch, isSaved, calculateMatch]);
+
+  // Identify schemes closing this week (<= 7 days or <= 14 days) from stable gazette list
   const closingSoonSchemes = useMemo(() => {
-    return scholarshipsList.filter((s) => {
+    const list = allScholarships.length > 0 ? allScholarships : SCHOLARSHIPS;
+    return list.filter((s) => {
       const days = getDaysRemaining(s.deadline);
       return days >= 0 && days <= 14;
     });
-  }, [scholarshipsList]);
+  }, [allScholarships]);
 
-  // Total potential funding calculation
+  // Total potential funding calculation (stable total across all gazette schemes)
   const totalFundingAmount = useMemo(() => {
-    return scholarshipsList.reduce((acc, curr) => acc + curr.amount, 0);
-  }, [scholarshipsList]);
+    const list = allScholarships.length > 0 ? allScholarships : SCHOLARSHIPS;
+    return list.reduce((acc, curr) => acc + curr.amount, 0);
+  }, [allScholarships]);
 
   // One large featured scholarship (pick the first marked featured, or highest match)
   const featuredScholarship = useMemo(() => {
@@ -466,8 +537,8 @@ export const DiscoverPage: React.FC = () => {
             )}
 
             {filters.minAmount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-xs bg-surface border border-border text-text font-mono">
-                Min: ₹{(filters.minAmount / 1000).toLocaleString('en-IN')}k
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-xs bg-surface border border-border text-text font-mono lining-nums">
+                Min: ₹{filters.minAmount.toLocaleString('en-IN')}+
                 <button type="button" onClick={() => handleFilterChange({ minAmount: 0 })} aria-label="Remove min amount">
                   <X size={12} />
                 </button>
@@ -505,13 +576,13 @@ export const DiscoverPage: React.FC = () => {
         {/* Content Layout: Filter Sidebar + Ruled List (Desktop) / Cards (Mobile) */}
         <div className="pt-6 flex flex-col lg:flex-row items-start gap-8">
           
-          {/* Desktop Filter Sidebar (Sticky) */}
-          <div className="hidden lg:block sticky top-6 self-start shrink-0">
+          {/* Desktop Filter Sidebar (Sticky top: 16px) */}
+          <div className="hidden lg:block sticky top-4 self-start shrink-0">
             <FilterSidebar
               filters={filters}
               onChange={handleFilterChange}
               onReset={handleResetFilters}
-              totalCount={scholarshipsList.length}
+              totalCount={allScholarships.length || SCHOLARSHIPS.length}
               filteredCount={filteredScholarships.length}
               onlySaved={onlySaved}
               onToggleOnlySaved={() => setOnlySaved(!onlySaved)}
@@ -527,13 +598,13 @@ export const DiscoverPage: React.FC = () => {
                 className="fixed inset-0 bg-black/60 backdrop-blur-[2px]"
                 onClick={() => setMobileFilterOpen(false)}
               />
-              <div className="relative w-full max-w-xs h-full bg-surface text-text overflow-y-auto p-5 shadow-2xl z-10 border-l border-border">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-border">
+              <div className="relative w-full max-w-xs h-full bg-surface text-text overflow-y-auto p-4 shadow-2xl z-10 border-l border-border" data-lenis-prevent>
+                <div className="flex items-center justify-between pb-3 mb-2 border-b border-border">
                   <h3 className="font-serif font-bold text-base text-text">Dossier Filters</h3>
                   <button
                     type="button"
                     onClick={() => setMobileFilterOpen(false)}
-                    className="p-1 rounded-[2px] text-muted hover:bg-surface-2"
+                    className="p-1 rounded-[2px] text-muted hover:bg-surface-2 cursor-pointer"
                   >
                     <X size={18} />
                   </button>
@@ -542,7 +613,7 @@ export const DiscoverPage: React.FC = () => {
                   filters={filters}
                   onChange={handleFilterChange}
                   onReset={handleResetFilters}
-                  totalCount={scholarshipsList.length}
+                  totalCount={allScholarships.length || SCHOLARSHIPS.length}
                   filteredCount={filteredScholarships.length}
                   onlySaved={onlySaved}
                   onToggleOnlySaved={() => setOnlySaved(!onlySaved)}
@@ -552,7 +623,7 @@ export const DiscoverPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setMobileFilterOpen(false)}
-                  className="w-full mt-4 py-2.5 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs uppercase tracking-wider min-h-[44px]"
+                  className="w-full mt-3 py-2.5 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs uppercase tracking-wider min-h-[44px] cursor-pointer"
                 >
                   Apply & Close ({filteredScholarships.length} found)
                 </button>
@@ -560,8 +631,8 @@ export const DiscoverPage: React.FC = () => {
             </div>
           )}
 
-          {/* Main Opportunities Area */}
-          <div className="flex-1 w-full space-y-6">
+          {/* Main Opportunities Area (Fixed min-height prevents scroll jump when list shrinks) */}
+          <div className="flex-1 w-full space-y-6 min-h-[720px]">
             {isLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, idx) => (

@@ -7,6 +7,8 @@ import { ArrowSquareOut } from '@phosphor-icons/react/dist/csr/ArrowSquareOut';
 import { Plus } from '@phosphor-icons/react/dist/csr/Plus';
 import { MagnifierDocketIllustration } from '../components/illustrations/EditorialIllustrations';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
+import { useClickGuard } from '../hooks/useClickGuard';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { SCHOLARSHIPS } from '../data/scholarships';
 import { formatReadableDate, formatDeadlineBadge } from '../utils/dateUtils';
@@ -21,6 +23,9 @@ export const ComparePage: React.FC = () => {
     setTrackerStatus,
     getTrackerStatus,
   } = useApp();
+
+  const { showToast } = useToast();
+  const { runGuarded, isGuarded } = useClickGuard(400);
 
   const comparedScholarships = compareIds
     .map((id) => SCHOLARSHIPS.find((s) => s.id === id))
@@ -199,8 +204,13 @@ export const ComparePage: React.FC = () => {
                         </span>
                         <button
                           type="button"
-                          onClick={() => toggleCompare(sch.id)}
-                          className="p-1 rounded-[2px] text-muted hover:text-accent min-h-[32px] min-w-[32px] flex items-center justify-center"
+                          disabled={isGuarded(`comp-${sch.id}`)}
+                          onClick={() => {
+                            runGuarded(`comp-${sch.id}`, () => {
+                              toggleCompare(sch.id);
+                            });
+                          }}
+                          className="p-1 rounded-[2px] text-muted hover:text-accent min-h-[32px] min-w-[32px] flex items-center justify-center disabled:opacity-50"
                           title="Remove from comparison"
                           aria-label={`Remove ${sch.name} from comparison`}
                         >
@@ -213,21 +223,51 @@ export const ComparePage: React.FC = () => {
                       >
                         {sch.name}
                       </Link>
-                      <div className="flex items-center gap-2">
-                        <Link
-                          to={`/scholarship/${sch.id}`}
-                          className="px-2.5 py-1 rounded-[2px] bg-primary text-primary-contrast text-xs font-semibold hover:opacity-90 transition-opacity min-h-[36px] flex items-center"
-                        >
-                          Details
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => setTrackerStatus(sch.id, 'applying')}
-                          className="px-2.5 py-1 rounded-[2px] border border-border text-text text-xs font-semibold hover:bg-surface-2 transition-colors min-h-[36px]"
-                        >
-                          {getTrackerStatus(sch.id) ? `Docket: ${getTrackerStatus(sch.id)}` : 'Add to Docket'}
-                        </button>
-                      </div>
+                      {(() => {
+                        const currentTracker = getTrackerStatus(sch.id);
+                        return (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                              to={`/scholarship/${sch.id}`}
+                              className="px-2.5 py-1 rounded-[2px] bg-primary text-primary-contrast text-xs font-semibold hover:opacity-90 transition-opacity min-h-[36px] flex items-center"
+                            >
+                              Details
+                            </Link>
+                            {currentTracker ? (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="px-2.5 py-1 rounded-[2px] border border-border bg-surface-2 text-muted text-xs font-semibold cursor-not-allowed min-h-[36px]"
+                                  title={`Active in your docket (${currentTracker})`}
+                                >
+                                  {`In your docket: ${currentTracker.charAt(0).toUpperCase() + currentTracker.slice(1)}`}
+                                </button>
+                                <Link
+                                  to="/tracker"
+                                  className="text-[11px] font-semibold text-primary hover:underline whitespace-nowrap"
+                                >
+                                  View &rarr;
+                                </Link>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={isGuarded(`track-${sch.id}`)}
+                                onClick={() => {
+                                  runGuarded(`track-${sch.id}`, () => {
+                                    setTrackerStatus(sch.id, 'applying');
+                                    showToast('Started tracking in your application docket', 'success', `track-${sch.id}`);
+                                  });
+                                }}
+                                className="px-2.5 py-1 rounded-[2px] border border-border text-text text-xs font-semibold hover:bg-surface-2 transition-colors min-h-[36px] disabled:opacity-60"
+                              >
+                                Add to Docket
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </th>
                   ))}
                 </tr>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { BookmarkSimple } from '@phosphor-icons/react/dist/csr/BookmarkSimple';
 import { CheckCircle } from '@phosphor-icons/react/dist/csr/CheckCircle';
 import { CaretRight } from '@phosphor-icons/react/dist/csr/CaretRight';
@@ -11,6 +10,8 @@ import { Clock } from '@phosphor-icons/react/dist/csr/Clock';
 import { ArrowsLeftRight } from '@phosphor-icons/react/dist/csr/ArrowsLeftRight';
 import type { Scholarship, TrackerStatus } from '../types';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
+import { useClickGuard } from '../hooks/useClickGuard';
 import { formatDeadlineBadge, formatReadableDate } from '../utils/dateUtils';
 
 interface ScholarshipCardProps {
@@ -30,6 +31,9 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
     toggleCompare,
   } = useApp();
 
+  const { showToast } = useToast();
+  const { runGuarded, isGuarded } = useClickGuard(400);
+
   const [showStatusMenu, setShowStatusMenu] = useState(false);
 
   const saved = isSaved(scholarship.id);
@@ -48,17 +52,29 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
 
   const handleCompareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const success = toggleCompare(scholarship.id);
-    if (!success && !compared) {
-      alert('You can compare a maximum of 3 scholarships simultaneously.');
-    }
+    runGuarded(`comp-${scholarship.id}`, () => {
+      const success = toggleCompare(scholarship.id);
+      if (!success && !compared) {
+        showToast('You can compare a maximum of 3 scholarships simultaneously.', 'warning', 'compare-limit');
+      }
+    });
+  };
+
+  const handleSaveToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    runGuarded(`save-${scholarship.id}`, () => {
+      const isNowSaved = toggleSave(scholarship.id);
+      showToast(
+        isNowSaved ? 'Saved' : 'Removed from saved',
+        isNowSaved ? 'success' : 'info',
+        `save-${scholarship.id}`
+      );
+    });
   };
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+    <article
       className={`relative flex flex-col justify-between bg-surface rounded-[4px] border transition-all duration-200 ${
         compared
           ? 'border-primary ring-1 ring-primary shadow-hard-primary'
@@ -115,8 +131,9 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
             {/* Compare */}
             <button
               type="button"
+              disabled={isGuarded(`comp-${scholarship.id}`)}
               onClick={handleCompareClick}
-              className={`p-2 rounded-[2px] border text-xs font-semibold transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+              className={`p-2 rounded-[2px] border text-xs font-semibold transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-60 ${
                 compared
                   ? 'bg-primary text-primary-contrast border-primary'
                   : 'bg-surface-2 text-text border-border hover:border-primary/40'
@@ -130,11 +147,9 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
             {/* Bookmark */}
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                toggleSave(scholarship.id);
-              }}
-              className={`p-2 rounded-[2px] border transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+              disabled={isGuarded(`save-${scholarship.id}`)}
+              onClick={handleSaveToggle}
+              className={`p-2 rounded-[2px] border transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-60 ${
                 saved
                   ? 'bg-accent/15 border-accent/40 text-accent'
                   : 'border-border bg-surface hover:bg-surface-2 text-muted hover:text-text'
@@ -223,7 +238,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
               type="button"
               onClick={() => setShowStatusMenu(!showStatusMenu)}
               className="p-2.5 rounded-[2px] border border-border bg-surface hover:bg-surface-2 text-text transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Manage docket status"
+              aria-label="Manage application docket stage"
               title="Set application stage"
             >
               <Kanban size={16} />
@@ -240,11 +255,18 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
                     <button
                       key={opt.status}
                       type="button"
+                      disabled={isGuarded(`status-${scholarship.id}`)}
                       onClick={() => {
-                        setTrackerStatus(scholarship.id, opt.status);
                         setShowStatusMenu(false);
+                        if (currentTrackerStatus === opt.status) {
+                          return;
+                        }
+                        runGuarded(`status-${scholarship.id}`, () => {
+                          setTrackerStatus(scholarship.id, opt.status);
+                          showToast(`Docket status updated to "${opt.label}"`, 'success', `status-${scholarship.id}`);
+                        });
                       }}
-                      className="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-surface-2 text-text transition-colors"
+                      className="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-surface-2 text-text transition-colors disabled:opacity-50"
                     >
                       <span>{opt.label}</span>
                       {currentTrackerStatus === opt.status && (
@@ -258,6 +280,6 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
           </div>
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 };

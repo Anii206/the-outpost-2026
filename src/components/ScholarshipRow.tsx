@@ -10,6 +10,8 @@ import { MapPin } from '@phosphor-icons/react/dist/csr/MapPin';
 import { Clock } from '@phosphor-icons/react/dist/csr/Clock';
 import type { Scholarship, TrackerStatus } from '../types';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
+import { useClickGuard } from '../hooks/useClickGuard';
 import { formatDeadlineBadge, formatReadableDate } from '../utils/dateUtils';
 
 interface ScholarshipRowProps {
@@ -27,6 +29,9 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
     isCompared,
     toggleCompare,
   } = useApp();
+
+  const { showToast } = useToast();
+  const { runGuarded, isGuarded } = useClickGuard(400);
 
   const [showStatusMenu, setShowStatusMenu] = useState(false);
 
@@ -46,10 +51,12 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
 
   const handleCompareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const success = toggleCompare(scholarship.id);
-    if (!success && !compared) {
-      alert('You can compare a maximum of 3 scholarships simultaneously.');
-    }
+    runGuarded(`comp-${scholarship.id}`, () => {
+      const success = toggleCompare(scholarship.id);
+      if (!success && !compared) {
+        showToast('You can compare a maximum of 3 scholarships simultaneously.', 'warning', 'compare-limit');
+      }
+    });
   };
 
   return (
@@ -149,8 +156,9 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
         {/* Compare Checkbox */}
         <button
           type="button"
+          disabled={isGuarded(`comp-${scholarship.id}`)}
           onClick={handleCompareClick}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-[2px] text-xs font-medium border transition-colors min-h-[38px] ${
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-[2px] text-xs font-medium border transition-colors min-h-[38px] disabled:opacity-60 ${
             compared
               ? 'bg-primary text-primary-contrast border-primary'
               : 'bg-surface border-border hover:bg-surface-2 text-text'
@@ -165,8 +173,19 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
         {/* Bookmark Docket */}
         <button
           type="button"
-          onClick={() => toggleSave(scholarship.id)}
-          className={`p-2 rounded-[2px] border transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center ${
+          disabled={isGuarded(`save-${scholarship.id}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            runGuarded(`save-${scholarship.id}`, () => {
+              const isNowSaved = toggleSave(scholarship.id);
+              showToast(
+                isNowSaved ? 'Saved' : 'Removed from saved',
+                isNowSaved ? 'success' : 'info',
+                `save-${scholarship.id}`
+              );
+            });
+          }}
+          className={`p-2 rounded-[2px] border transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center disabled:opacity-60 ${
             saved
               ? 'bg-accent/10 border-accent/40 text-accent'
               : 'border-border bg-surface hover:bg-surface-2 text-muted hover:text-text'
@@ -200,11 +219,18 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
                   <button
                     key={opt.status}
                     type="button"
+                    disabled={isGuarded(`status-${scholarship.id}`)}
                     onClick={() => {
-                      setTrackerStatus(scholarship.id, opt.status);
                       setShowStatusMenu(false);
+                      if (currentTrackerStatus === opt.status) {
+                        return;
+                      }
+                      runGuarded(`status-${scholarship.id}`, () => {
+                        setTrackerStatus(scholarship.id, opt.status);
+                        showToast(`Docket status updated to "${opt.label}"`, 'success', `status-${scholarship.id}`);
+                      });
                     }}
-                    className="w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-surface-2 text-text transition-colors"
+                    className="w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-surface-2 text-text transition-colors disabled:opacity-50"
                   >
                     <span>{opt.label}</span>
                     {currentTrackerStatus === opt.status && (

@@ -18,6 +18,7 @@ import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle';
 import { CalendarPlus } from '@phosphor-icons/react/dist/csr/CalendarPlus';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
+import { useClickGuard } from '../hooks/useClickGuard';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { getScholarshipById, getSimilarScholarships } from '../services/api';
 import type { Scholarship } from '../types';
@@ -38,6 +39,7 @@ export const ScholarshipDetailPage: React.FC = () => {
   } = useApp();
 
   const { showToast } = useToast();
+  const { runGuarded, isGuarded } = useClickGuard(400);
 
   const [scholarship, setScholarship] = useState<Scholarship | null>(null);
   const [similarScholarships, setSimilarScholarships] = useState<Scholarship[]>([]);
@@ -136,26 +138,33 @@ export const ScholarshipDetailPage: React.FC = () => {
   const docProgressPercent = totalDocs > 0 ? Math.round((checkedCount / totalDocs) * 100) : 0;
 
   const handleSaveToggle = () => {
-    toggleSave(scholarship.id);
-    if (!saved) {
-      showToast(`Filed "${scholarship.name}" into your application docket`, 'success');
-    } else {
-      showToast(`Removed "${scholarship.name}" from docket`, 'info');
-    }
+    runGuarded(`save-${scholarship.id}`, () => {
+      const isNowSaved = toggleSave(scholarship.id);
+      showToast(
+        isNowSaved ? 'Saved' : 'Removed from saved',
+        isNowSaved ? 'success' : 'info',
+        `save-${scholarship.id}`
+      );
+    });
   };
 
   const handleStartTracking = () => {
-    setTrackerStatus(scholarship.id, 'applying');
-    showToast(`Docket status moved to "Applying"`, 'success');
+    if (currentTracker) return;
+    runGuarded(`track-${scholarship.id}`, () => {
+      setTrackerStatus(scholarship.id, 'applying');
+      showToast('Started tracking in your application docket', 'success', `track-${scholarship.id}`);
+    });
   };
 
   const handleAddToCalendar = () => {
-    downloadCalendarEvent(scholarship);
-    showToast('Deadline reminder (.ics file) generated for calendar', 'success');
+    runGuarded(`cal-${scholarship.id}`, () => {
+      downloadCalendarEvent(scholarship);
+      showToast('Deadline reminder (.ics file) generated for calendar', 'success', `cal-${scholarship.id}`);
+    });
   };
 
   return (
-    <div className="min-h-screen pb-32 bg-bg text-text transition-colors">
+    <div className="min-h-screen pb-40 bg-bg text-text transition-colors">
       {/* Top Breadcrumb */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
         <Link
@@ -240,8 +249,9 @@ export const ScholarshipDetailPage: React.FC = () => {
                 {/* Calendar Add Button */}
                 <button
                   type="button"
+                  disabled={isGuarded(`cal-${scholarship.id}`)}
                   onClick={handleAddToCalendar}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] border border-border bg-surface hover:bg-surface-2 text-text text-xs font-semibold transition-colors ml-auto sm:ml-0 min-h-[44px]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] border border-border bg-surface hover:bg-surface-2 text-text text-xs font-semibold transition-colors ml-auto sm:ml-0 min-h-[44px] disabled:opacity-60"
                   title="Download .ics reminder file for calendar"
                   aria-label="Add deadline to calendar"
                 >
@@ -522,46 +532,71 @@ export const ScholarshipDetailPage: React.FC = () => {
             <p className="font-mono text-base font-bold text-primary leading-none mt-0.5">{scholarship.amountFormatted}</p>
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-            {/* Bookmark button */}
-            <button
-              type="button"
-              onClick={handleSaveToggle}
-              className={`p-2.5 rounded-[2px] border transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                saved
-                  ? 'bg-accent/15 text-accent border-accent/40'
-                  : 'bg-surface text-text border-border hover:bg-surface-2'
-              }`}
-              title={saved ? 'Remove from docket' : 'Save to application docket'}
-              aria-label={saved ? 'Remove from docket' : 'Save scholarship'}
-            >
-              <BookmarkSimple size={18} weight={saved ? 'fill' : 'regular'} />
-            </button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-2.5 justify-end">
+              {/* Bookmark button */}
+              <button
+                type="button"
+                disabled={isGuarded(`save-${scholarship.id}`)}
+                onClick={handleSaveToggle}
+                className={`p-2.5 rounded-[2px] border transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-60 ${
+                  saved
+                    ? 'bg-accent/15 text-accent border-accent/40'
+                    : 'bg-surface text-text border-border hover:bg-surface-2'
+                }`}
+                title={saved ? 'Remove from docket' : 'Save to application docket'}
+                aria-label={saved ? 'Remove from docket' : 'Save scholarship'}
+              >
+                <BookmarkSimple size={18} weight={saved ? 'fill' : 'regular'} />
+              </button>
 
-            {/* Start Tracking button */}
-            <button
-              type="button"
-              onClick={handleStartTracking}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-[2px] text-xs font-semibold border transition-colors min-h-[44px] ${
-                currentTracker === 'applying'
-                  ? 'bg-accent/15 text-accent border-accent/30'
-                  : 'bg-surface hover:bg-surface-2 text-text border-border'
-              }`}
-            >
-              <Kanban size={15} className="text-primary" />
-              <span>{currentTracker ? `Docket: ${currentTracker}` : 'Start Tracking'}</span>
-            </button>
+              {/* Start Tracking button */}
+              {currentTracker ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-[2px] text-xs font-semibold border border-border bg-surface-2 text-muted cursor-not-allowed min-h-[44px]"
+                    title={`Scheme is already active in your docket (${currentTracker})`}
+                  >
+                    <Kanban size={15} className="text-muted" />
+                    <span>{`In your docket: ${currentTracker.charAt(0).toUpperCase() + currentTracker.slice(1)}`}</span>
+                  </button>
+                  <Link
+                    to="/tracker"
+                    className="text-xs font-semibold text-primary hover:underline flex items-center min-h-[44px] px-1 whitespace-nowrap"
+                  >
+                    View in tracker &rarr;
+                  </Link>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isGuarded(`track-${scholarship.id}`)}
+                  onClick={handleStartTracking}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-[2px] text-xs font-semibold border transition-colors min-h-[44px] bg-surface hover:bg-surface-2 text-text border-border disabled:opacity-60"
+                >
+                  <Kanban size={15} className="text-primary" />
+                  <span>Start Tracking</span>
+                </button>
+              )}
+            </div>
 
             {/* Official Apply Link Button */}
-            <a
-              href={scholarship.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-[2px] bg-primary text-primary-contrast text-xs font-semibold hover:opacity-90 transition-opacity min-h-[44px]"
-            >
-              <span>Apply on Official Portal</span>
-              <ArrowSquareOut size={14} />
-            </a>
+            <div className="flex flex-col items-end">
+              <a
+                href={scholarship.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-[2px] bg-primary text-primary-contrast text-xs font-semibold hover:opacity-90 transition-opacity min-h-[44px] w-full sm:w-auto"
+              >
+                <span>Apply on Official Portal</span>
+                <ArrowSquareOut size={14} />
+              </a>
+              <p className="text-[10px] text-muted font-sans mt-1 text-right">
+                GRANTLY doesn't submit applications. You'll apply on the official portal.
+              </p>
+            </div>
           </div>
         </div>
       </div>
