@@ -12,6 +12,7 @@ import { SCHOLARSHIPS } from '../data/scholarships';
 import { formatReadableDate, getDaysRemaining, formatDeadlineBadge } from '../utils/dateUtils';
 import { CountUpNumber } from '../components/CountUpNumber';
 import { ScholarshipCard } from '../components/ScholarshipCard';
+import { RupeeCoinStackIllustration } from '../components/illustrations/EditorialIllustrations';
 
 const DashboardPipelineChart = React.lazy(() => import('../components/DashboardPipelineChart'));
 const DashboardMonthlyChart = React.lazy(() => import('../components/DashboardMonthlyChart'));
@@ -178,37 +179,54 @@ export const DashboardPage: React.FC = () => {
           </aside>
         )}
 
-        {/* GREETING & LEAD NUMBER HERO BANNER */}
-        <div className="bg-surface rounded-[4px] border border-border p-6 sm:p-8 space-y-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-5 border-b border-border">
+        {/* GREETING & LEAD NUMBER HERO BANNER (Deep Green Art-Directed Block) */}
+        <div className="bg-[#1F4D3A] text-[#FBF8F1] dark:bg-[#12241C] dark:text-[#F2ECDD] rounded-[4px] border-2 border-[#1F4D3A] dark:border-[#1F4D3A]/70 p-6 sm:p-10 space-y-6 shadow-hard-lg relative crop-mark-container overflow-hidden transition-colors">
+          {/* Newspaper printing corner crop marks */}
+          <span className="crop-mark-tl text-[#FBF8F1] dark:text-[#7FBF9E]" />
+          <span className="crop-mark-tr text-[#FBF8F1] dark:text-[#7FBF9E]" />
+          <span className="crop-mark-bl text-[#FBF8F1] dark:text-[#7FBF9E]" />
+          <span className="crop-mark-br text-[#FBF8F1] dark:text-[#7FBF9E]" />
+
+          {/* Background engraved coin illustration watermark */}
+          <div className="absolute -right-6 -bottom-6 pointer-events-none opacity-20 dark:opacity-10 text-[#FBF8F1]">
+            <RupeeCoinStackIllustration size={240} />
+          </div>
+
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-[#FBF8F1]/20 dark:border-white/10 relative z-10">
             <div>
-              <div className="flex items-center gap-2 text-muted text-[11px] font-mono uppercase tracking-widest font-semibold mb-1">
+              <div className="flex items-center gap-2 text-[#FBF8F1]/70 dark:text-[#A39C8C] text-[11px] font-mono uppercase tracking-widest font-semibold mb-1">
+                <span className="font-serif font-black text-accent mr-1">01</span>
+                <span>•</span>
                 <span>Executive Student Briefing</span>
                 <span>•</span>
-                <span>Candidate Docket Ledger</span>
+                <span>Candidate Docket <span className="font-instrument italic font-normal text-[#7FBF9E]">Ledger</span></span>
               </div>
-              <h1 className="font-serif text-2xl sm:text-4xl font-black text-text tracking-tight">
-                {profile.isOnboarded && profile.name?.trim() ? `Welcome back, ${profile.name.split(' ')[0]}` : 'Executive Student Briefing'}
+              <h1 className="font-serif text-2xl sm:text-4xl md:text-5xl font-black text-[#FBF8F1] tracking-tight leading-tight">
+                {profile.isOnboarded && profile.name?.trim() ? (
+                  <>Welcome back, <span className="font-instrument italic font-normal text-[#7FBF9E]">{profile.name.split(' ')[0]}</span></>
+                ) : (
+                  <>Executive Student <span className="font-instrument italic font-normal text-[#7FBF9E]">Briefing</span></>
+                )}
               </h1>
-              <p className="font-sans text-xs sm:text-sm text-muted mt-0.5">
+              <p className="font-sans text-xs sm:text-sm text-[#FBF8F1]/80 dark:text-[#A39C8C] mt-1 max-w-xl">
                 Financial dispatch summarizing qualified schemes, upcoming closing notices, and document verification.
               </p>
             </div>
 
             {/* Profile Readiness Pill */}
-            <div className="flex items-center gap-3 bg-surface-2 p-3 rounded-[2px] border border-border w-full sm:w-auto">
-              <div className="w-9 h-9 rounded-[2px] bg-primary text-primary-contrast flex items-center justify-center font-mono font-bold text-xs">
+            <div className="flex items-center gap-3 bg-[#FBF8F1]/10 dark:bg-black/30 p-3 rounded-[2px] border border-[#FBF8F1]/20 w-full sm:w-auto shrink-0 backdrop-blur-xs">
+              <div className="w-10 h-10 rounded-[2px] bg-[#7FBF9E] text-[#14120F] flex items-center justify-center font-mono font-bold text-xs">
                 {profileCompletionPercent}%
               </div>
               <div>
-                <p className="font-sans text-xs font-bold text-text">Dossier Readiness</p>
-                <p className="font-sans text-[11px] text-muted">
+                <p className="font-sans text-xs font-bold text-[#FBF8F1]">Dossier Readiness</p>
+                <p className="font-sans text-[11px] text-[#FBF8F1]/75 dark:text-[#A39C8C]">
                   {profile.isOnboarded ? `${profile.category} • ${profile.state}` : 'Create your profile to see matches'}
                 </p>
               </div>
               <Link
                 to="/profile"
-                className="ml-auto text-xs font-semibold text-primary hover:underline min-h-[36px] flex items-center"
+                className="ml-auto text-xs font-bold text-[#7FBF9E] hover:underline min-h-[36px] flex items-center px-1"
               >
                 {profile.isOnboarded ? 'Edit →' : 'Set up →'}
               </Link>
@@ -216,27 +234,27 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* OVERSIZED LEAD NUMBER: Total Potential Eligible Funding */}
-          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pt-1">
-            <div className="space-y-1">
-              <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-muted block">
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-6 pt-2 relative z-10">
+            <div className="space-y-1.5">
+              <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-[#FBF8F1]/70 dark:text-[#A39C8C] block">
                 Total Potential Funding Eligible For (Match &ge; 70%)
               </span>
-              <div className="font-serif lining-nums text-3xl sm:text-5xl font-black text-primary tracking-tight">
-                <CountUpNumber end={eligibleTotalAmount} prefix="₹" className="font-serif lining-nums text-primary font-black" />
+              <div className="font-serif lining-nums text-4xl sm:text-6xl md:text-7xl font-black text-[#7FBF9E] tracking-tight leading-none">
+                <CountUpNumber end={eligibleTotalAmount} prefix="₹" className="font-serif lining-nums text-[#7FBF9E] font-black" />
               </div>
-              <p className="font-sans text-xs text-muted">
-                Across {eligibleCount} qualifying government and corporate fellowship schemes
+              <p className="font-sans text-xs text-[#FBF8F1]/75 dark:text-[#A39C8C]">
+                Across {eligibleCount} qualifying government, trust, and corporate fellowship schemes
               </p>
             </div>
 
-            <div className="flex items-center gap-6 font-sans text-xs text-muted border-t sm:border-t-0 sm:border-l border-border pt-3 sm:pt-0 sm:pl-6">
+            <div className="flex items-center gap-8 font-sans text-xs text-[#FBF8F1]/80 border-t sm:border-t-0 sm:border-l border-[#FBF8F1]/20 pt-4 sm:pt-0 sm:pl-8">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider block text-muted">Dockets In Pipeline</span>
-                <span className="font-mono text-xl font-bold text-text">{pipelineCounts.totalTracked}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider block text-[#FBF8F1]/70 dark:text-[#A39C8C]">Dockets In Pipeline</span>
+                <span className="font-serif lining-nums text-2xl sm:text-3xl font-black text-[#FBF8F1]">{pipelineCounts.totalTracked}</span>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider block text-muted">Document Readiness</span>
-                <span className="font-mono text-xl font-bold text-text">{documentReadiness.percent}%</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider block text-[#FBF8F1]/70 dark:text-[#A39C8C]">Document Readiness</span>
+                <span className="font-serif lining-nums text-2xl sm:text-3xl font-black text-[#7FBF9E]">{documentReadiness.percent}%</span>
               </div>
             </div>
           </div>

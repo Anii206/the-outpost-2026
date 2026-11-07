@@ -5,12 +5,12 @@ import { ArrowRight } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { ArrowLeft } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { Sparkle } from '@phosphor-icons/react/dist/csr/Sparkle';
 import { ArrowCounterClockwise } from '@phosphor-icons/react/dist/csr/ArrowCounterClockwise';
-import { Certificate } from '@phosphor-icons/react/dist/csr/Certificate';
 import { useApp, DEMO_PROFILE } from '../context/AppContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import type { AcademicLevel, SocialCategory, IncomeBracket, UserProfile } from '../types';
 import { ALL_LEVELS, INDIAN_STATES, SOCIAL_CATEGORIES } from '../data/scholarships';
 import { fireAwardedConfetti } from '../utils/confetti';
+import { StampedDocumentIllustration } from '../components/illustrations/EditorialIllustrations';
 
 const GENDER_OPTIONS: UserProfile['gender'][] = ['Female', 'Male', 'Non-Binary', 'Prefer not to say'];
 
@@ -153,8 +153,12 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 min-h-[80vh] bg-bg text-text transition-colors">
       
-      {/* Onboarding Container Card */}
-      <div className="bg-surface rounded-[4px] border border-border p-6 sm:p-10 shadow-xs">
+      {/* Onboarding Container Card with Editorial Crop Marks & Hard Shadow */}
+      <div className="bg-surface rounded-[4px] border border-border p-6 sm:p-10 shadow-hard-lg relative crop-mark-container">
+        <span className="crop-mark-tl text-border-strong" />
+        <span className="crop-mark-tr text-border-strong" />
+        <span className="crop-mark-bl text-border-strong" />
+        <span className="crop-mark-br text-border-strong" />
         
         {/* Header with Title and Reset */}
         <div className="flex items-center justify-between pb-5 border-b border-border">
@@ -213,8 +217,8 @@ export const ProfilePage: React.FC = () => {
         {/* Success Banner when saved */}
         {isSaved ? (
           <div className="py-8 text-center space-y-5 animate-in fade-in duration-200">
-            <div className="w-12 h-12 rounded-[2px] bg-primary text-primary-contrast flex items-center justify-center mx-auto shadow-xs">
-              <Certificate size={24} />
+            <div className="flex justify-center mx-auto mb-2">
+              <StampedDocumentIllustration size={130} />
             </div>
 
             <div className="space-y-1.5">

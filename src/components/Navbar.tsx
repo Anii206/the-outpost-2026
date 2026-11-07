@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { BookmarkSimple } from '@phosphor-icons/react/dist/csr/BookmarkSimple';
 import { Kanban } from '@phosphor-icons/react/dist/csr/Kanban';
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour';
@@ -223,7 +224,11 @@ export const Navbar: React.FC = () => {
                         </span>
                       )}
                       {active && (
-                        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary" />
+                        <motion.span
+                          layoutId="activeNavUnderline"
+                          transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                          className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-primary z-10"
+                        />
                       )}
                     </Link>
                   );

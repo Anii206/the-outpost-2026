@@ -4,8 +4,8 @@ import { ArrowLeft } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { X } from '@phosphor-icons/react/dist/csr/X';
 import { Clock } from '@phosphor-icons/react/dist/csr/Clock';
 import { ArrowSquareOut } from '@phosphor-icons/react/dist/csr/ArrowSquareOut';
-import { ArrowsLeftRight } from '@phosphor-icons/react/dist/csr/ArrowsLeftRight';
 import { Plus } from '@phosphor-icons/react/dist/csr/Plus';
+import { MagnifierDocketIllustration } from '../components/illustrations/EditorialIllustrations';
 import { useApp } from '../context/AppContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { SCHOLARSHIPS } from '../data/scholarships';
@@ -29,8 +29,8 @@ export const ComparePage: React.FC = () => {
   if (comparedScholarships.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 text-center text-text">
-        <div className="w-12 h-12 rounded-[2px] bg-primary text-primary-contrast flex items-center justify-center mx-auto mb-4">
-          <ArrowsLeftRight size={22} />
+        <div className="flex justify-center mx-auto mb-4">
+          <MagnifierDocketIllustration size={140} />
         </div>
         <h1 className="font-serif text-2xl sm:text-3xl font-bold text-text mb-2">
           No Schemes Staged for Comparison
@@ -40,7 +40,7 @@ export const ComparePage: React.FC = () => {
         </p>
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs transition-opacity hover:opacity-90 min-h-[44px]"
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs shadow-hard active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all min-h-[44px]"
         >
           <ArrowLeft size={14} />
           <span>Return to Gazette Index</span>
@@ -182,7 +182,7 @@ export const ComparePage: React.FC = () => {
         </div>
 
         {/* COMPARISON TABLE */}
-        <div className="bg-surface rounded-[4px] border border-border shadow-xs overflow-hidden">
+        <div className="bg-surface rounded-[4px] border border-border shadow-hard-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left" role="table">
               {/* Header Row */}

@@ -4,14 +4,14 @@ import { X } from '@phosphor-icons/react/dist/csr/X';
 import { Sparkle } from '@phosphor-icons/react/dist/csr/Sparkle';
 import { GraduationCap } from '@phosphor-icons/react/dist/csr/GraduationCap';
 import { ArrowRight } from '@phosphor-icons/react/dist/csr/ArrowRight';
-import { Trophy } from '@phosphor-icons/react/dist/csr/Trophy';
 import { CaretRight } from '@phosphor-icons/react/dist/csr/CaretRight';
 import { ArrowCounterClockwise } from '@phosphor-icons/react/dist/csr/ArrowCounterClockwise';
 import { useApp } from '../context/AppContext';
 import { SCHOLARSHIPS, ALL_LEVELS, SOCIAL_CATEGORIES, INDIAN_STATES } from '../data/scholarships';
 import type { AcademicLevel, SocialCategory, IncomeBracket } from '../types';
-import { formatINR } from '../utils/dateUtils';
 import { fireAwardedConfetti } from '../utils/confetti';
+import { CountUpNumber } from './CountUpNumber';
+import { RupeeCoinStackIllustration } from './illustrations/EditorialIllustrations';
 
 interface EligibilityFinderModalProps {
   isOpen: boolean;
@@ -306,8 +306,8 @@ export const EligibilityFinderModal: React.FC<EligibilityFinderModalProps> = ({
         {step === 5 && (
           <div className="space-y-5 animate-in fade-in duration-200">
             <div className="text-center space-y-1.5">
-              <div className="w-12 h-12 rounded-[2px] bg-primary text-primary-contrast flex items-center justify-center mx-auto mb-2">
-                <Trophy size={24} />
+              <div className="flex justify-center mx-auto mb-1">
+                <RupeeCoinStackIllustration size={120} />
               </div>
               <h3 className="font-serif text-2xl font-bold text-text">
                 Dossier Matched & Synchronized
@@ -317,13 +317,13 @@ export const EligibilityFinderModal: React.FC<EligibilityFinderModalProps> = ({
               </p>
             </div>
 
-            {/* Celebratory Total Funding Counter */}
-            <div className="bg-primary text-primary-contrast p-5 rounded-[4px] text-center space-y-1">
+            {/* Celebratory Total Funding Counter with NumberFlow */}
+            <div className="bg-primary text-primary-contrast p-5 rounded-[4px] text-center space-y-1 shadow-hard-md">
               <span className="font-sans text-[11px] font-bold uppercase tracking-widest opacity-90 block">
                 Total Potential Funding Eligible
               </span>
-              <p className="font-mono text-3xl font-bold tracking-tight">
-                {formatINR(totalCalculatedFunding)}
+              <p className="font-serif lining-nums text-3xl sm:text-4xl font-black tracking-tight">
+                <CountUpNumber end={totalCalculatedFunding} prefix="₹" />
               </p>
               <p className="text-xs opacity-90 font-sans">
                 Across {matchedScholarships.length} qualifying government and corporate schemes

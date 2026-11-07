@@ -7,6 +7,8 @@ import { ToastProvider } from './context/ToastContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { UrgentDeadlinesBanner } from './components/UrgentDeadlinesBanner';
+import { PaperGrain } from './components/PaperGrain';
+import { useSmoothScroll } from './hooks/useSmoothScroll';
 
 const DiscoverPage = React.lazy(() =>
   import('./pages/DiscoverPage').then((m) => ({ default: m.DiscoverPage }))
@@ -82,12 +84,15 @@ function AnimatedRoutes() {
 }
 
 function App() {
+  useSmoothScroll();
+
   return (
     <ThemeProvider>
       <AppProvider>
         <ToastProvider>
           <BrowserRouter>
-            <div className="min-h-screen flex flex-col bg-bg text-text font-sans selection:bg-primary selection:text-primary-contrast transition-colors">
+            <div className="min-h-screen flex flex-col bg-bg text-text font-sans selection:bg-primary selection:text-primary-contrast transition-colors relative">
+              <PaperGrain />
               <Navbar />
               <UrgentDeadlinesBanner />
               <AnimatedRoutes />

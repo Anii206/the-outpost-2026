@@ -14,7 +14,7 @@ export const Footer: React.FC = () => {
             <div className="flex items-center gap-2">
               <GraduationCap size={22} className="text-primary" />
               <span className="font-serif font-black text-xl tracking-tight text-text">
-                THE GRANTLY GAZETTE
+                THE GRANTLY <span className="font-instrument italic font-normal text-accent">GAZETTE</span>
               </span>
             </div>
             <p className="text-xs text-muted leading-relaxed font-sans">
@@ -56,7 +56,7 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-8 pt-4 border-t border-border/60 text-center sm:text-left">
+        <div className="mt-8 pt-4 tear-line text-center sm:text-left">
           <p className="text-xs font-sans text-muted/90 italic">
             Sample data for demonstration. Always confirm details on the official portal.
           </p>

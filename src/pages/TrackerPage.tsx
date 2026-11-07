@@ -222,10 +222,10 @@ export const TrackerPage: React.FC = () => {
                           key={item.scholarshipId}
                           draggable
                           onDragStart={(e) => handleDragStart(e, sch.id)}
-                          className={`bg-surface-2 rounded-[2px] border p-3.5 transition-colors cursor-grab active:cursor-grabbing space-y-2.5 ${
+                          className={`bg-surface-2 rounded-[2px] border p-3.5 transition-all duration-200 cursor-grab active:cursor-grabbing space-y-2.5 ${
                             draggedId === sch.id
-                              ? 'opacity-40 border-dashed border-primary'
-                              : 'border-border hover:border-primary/40'
+                              ? 'opacity-40 border-dashed border-primary shadow-none'
+                              : 'border-border hover:border-primary/50 hover:shadow-hard'
                           }`}
                           aria-label={`Scholarship ${sch.name}, status ${item.status}`}
                         >

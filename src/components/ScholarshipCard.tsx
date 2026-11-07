@@ -59,12 +59,12 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={`relative flex flex-col justify-between bg-surface rounded-[4px] border transition-colors ${
+      className={`relative flex flex-col justify-between bg-surface rounded-[4px] border transition-all duration-200 ${
         compared
-          ? 'border-primary ring-1 ring-primary'
+          ? 'border-primary ring-1 ring-primary shadow-hard-primary'
           : scholarship.featured
-          ? 'border-primary/50'
-          : 'border-border hover:border-primary/40'
+          ? 'border-primary/60 hover:shadow-hard-md'
+          : 'border-border hover:border-primary/50 hover:shadow-hard'
       } p-5`}
       aria-labelledby={`card-title-${scholarship.id}`}
     >

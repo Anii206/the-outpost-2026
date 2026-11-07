@@ -20,10 +20,13 @@ import { CompareFloatingBar } from '../components/CompareFloatingBar';
 import { EligibilityFinderModal } from '../components/EligibilityFinderModal';
 import { CountUpNumber } from '../components/CountUpNumber';
 import { getDaysRemaining, formatDeadlineBadge } from '../utils/dateUtils';
+import { RupeeCoinStackIllustration, StampedDocumentIllustration } from '../components/illustrations/EditorialIllustrations';
 
 export const DiscoverPage: React.FC = () => {
   const { isSaved, calculateMatch, profile } = useApp();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const stripScrollRef = useRef<HTMLDivElement>(null);
+  const [isStripHovered, setIsStripHovered] = useState(false);
 
   usePageTitle('The Grantly Gazette — Discover Indian Scholarships');
 
@@ -79,6 +82,31 @@ export const DiscoverPage: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Subtle auto-scroll on horizontal strip that pauses on hover (disabled under prefers-reduced-motion)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (isStripHovered) return;
+
+    const el = stripScrollRef.current;
+    if (!el) return;
+
+    let animId: number;
+    const scrollStep = () => {
+      if (el) {
+        if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
+          el.scrollLeft = 0;
+        } else {
+          el.scrollLeft += 0.5;
+        }
+      }
+      animId = requestAnimationFrame(scrollStep);
+    };
+
+    animId = requestAnimationFrame(scrollStep);
+    return () => cancelAnimationFrame(animId);
+  }, [isStripHovered]);
 
   const handleFilterChange = (updated: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...updated }));
@@ -181,14 +209,20 @@ export const DiscoverPage: React.FC = () => {
         </aside>
       )}
 
-      {/* HERO SECTION: Editorial Newspaper Front Page Lead */}
-      <section className="border-b border-border bg-surface/40 py-10 sm:py-16 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center space-y-4">
+      {/* HERO SECTION: Editorial Newspaper Front Page Lead with Texture & Linework */}
+      <section className="border-b border-border bg-surface/60 bg-fine-lines py-12 sm:py-20 relative overflow-hidden transition-colors">
+        {/* Subtle offset illustration watermark for depth */}
+        <div className="hidden lg:block absolute -right-6 -bottom-6 pointer-events-none opacity-30 dark:opacity-15">
+          <RupeeCoinStackIllustration size={240} />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-4xl mx-auto text-center space-y-5">
             
             {/* Section kicker */}
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-[2px] border border-border bg-surface text-muted text-[11px] font-mono uppercase tracking-widest font-semibold">
-              <Sparkle size={13} className="text-accent" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[2px] border border-border bg-surface text-muted text-[11px] font-mono uppercase tracking-widest font-semibold shadow-xs">
+              <span className="font-serif font-black text-accent mr-1">01</span>
+              <span>•</span>
               <span>
                 {profile.isOnboarded
                   ? `Active Dossier: ${profile.name.split(' ')[0]} • ${profile.category} • ${profile.state}`
@@ -196,7 +230,7 @@ export const DiscoverPage: React.FC = () => {
               </span>
             </div>
 
-            {/* Oversized count-up headline */}
+            {/* Oversized count-up headline with Instrument Serif italic emphasis */}
             <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl font-black text-text tracking-tight leading-[1.08]">
               <CountUpNumber
                 end={totalFundingAmount > 0 ? totalFundingAmount : 48250000}
@@ -204,7 +238,7 @@ export const DiscoverPage: React.FC = () => {
                 suffix="+"
                 className="font-serif lining-nums text-primary font-black"
               />{' '}
-              in scholarships open now
+              in scholarships open <span className="font-instrument italic font-normal text-accent tracking-normal">now</span>
             </h1>
 
             {/* Editorial subtext */}
@@ -212,18 +246,18 @@ export const DiscoverPage: React.FC = () => {
               An independent scholarship gazette tracking government, corporate CSR, and foundation fellowships across India. Match scores are calculated against your academic profile and reservation criteria.
             </p>
 
-            {/* Hero CTA & Search Bar */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {/* Hero CTA & Search Bar with Hard Offset Shadows */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
               <button
                 type="button"
                 onClick={() => setIsFinderOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs uppercase tracking-wider shadow-sm hover:opacity-90 transition-all min-h-[44px]"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs uppercase tracking-wider shadow-hard-md hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all min-h-[44px]"
               >
                 <span>Find my scholarships in 60 seconds</span>
                 <ArrowRight size={14} />
               </button>
 
-              <div className="w-full sm:w-96 relative flex items-center bg-surface border border-border rounded-[2px] focus-within:border-primary">
+              <div className="w-full sm:w-96 relative flex items-center bg-surface border border-border shadow-xs rounded-[2px] focus-within:border-primary focus-within:shadow-hard">
                 <MagnifyingGlass size={16} className="text-muted ml-3 shrink-0" />
                 <input
                   ref={searchInputRef}
@@ -260,10 +294,10 @@ export const DiscoverPage: React.FC = () => {
                   key={tag.label}
                   type="button"
                   onClick={() => handleFilterChange({ category: tag.category })}
-                  className={`px-2.5 py-1 rounded-[2px] text-xs font-medium border transition-colors min-h-[36px] ${
+                  className={`px-2.5 py-1 rounded-[2px] text-xs font-medium border transition-all min-h-[36px] ${
                     filters.category === tag.category
-                      ? 'bg-primary text-primary-contrast border-primary font-semibold'
-                      : 'bg-surface border-border text-text hover:bg-surface-2'
+                      ? 'bg-primary text-primary-contrast border-primary font-semibold shadow-xs'
+                      : 'bg-surface border-border text-text hover:bg-surface-2 hover:border-text/40'
                   }`}
                 >
                   {tag.label}
@@ -275,29 +309,34 @@ export const DiscoverPage: React.FC = () => {
         </div>
       </section>
 
-      {/* HORIZONTAL "CLOSING THIS WEEK" STRIP */}
+      {/* HORIZONTAL "CLOSING WITHIN 14 DAYS" STRIP: Full-Bleed Vermilion Band */}
       {closingSoonSchemes.length > 0 && (
         <section
           aria-label="Schemes closing soon"
-          className="border-b border-border bg-surface py-3 px-4 sm:px-6 lg:px-8"
+          className="border-b-2 border-accent/40 bg-accent text-primary-contrast py-3 px-4 sm:px-6 lg:px-8 shadow-hard transition-colors"
+          onMouseEnter={() => setIsStripHovered(true)}
+          onMouseLeave={() => setIsStripHovered(false)}
         >
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-2 shrink-0">
-              <Clock size={16} className="text-accent" />
-              <h2 className="font-sans text-xs font-bold uppercase tracking-wider text-text">
+              <Clock size={16} className="text-primary-contrast shrink-0" weight="bold" />
+              <h2 className="font-sans text-xs font-bold uppercase tracking-wider text-primary-contrast">
                 {closingSoonSchemes.length} schemes closing within 14 days — file required documents before deadline
               </h2>
             </div>
 
-            {/* Horizontal scrollable items strip */}
-            <div className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0">
-              {closingSoonSchemes.slice(0, 4).map((s) => {
+            {/* Horizontal auto-scrollable items strip that pauses on hover */}
+            <div
+              ref={stripScrollRef}
+              className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0 scrollbar-none"
+            >
+              {closingSoonSchemes.slice(0, 6).map((s) => {
                 const deadlineInfo = formatDeadlineBadge(s.deadline);
                 return (
                   <Link
                     key={s.id}
                     to={`/scholarship/${s.id}`}
-                    className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-[2px] border border-border bg-surface-2 hover:border-primary/40 text-xs text-text transition-colors"
+                    className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-[2px] bg-surface text-text border border-border shadow-xs hover:border-text transition-colors text-xs"
                   >
                     <span className="font-medium truncate max-w-[160px] sm:max-w-[200px]">{s.name}</span>
                     <span className="font-mono text-primary font-bold">{s.amountFormatted}</span>
@@ -316,20 +355,25 @@ export const DiscoverPage: React.FC = () => {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
         {/* Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-          <div>
-            <h2 className="font-serif text-xl sm:text-2xl font-bold text-text flex items-center gap-2">
-              <span>All Gazette Opportunities</span>
-              <span
-                className="font-mono text-xs font-bold px-2 py-0.5 rounded-[2px] bg-surface-2 text-text border border-border"
-                aria-live="polite"
-              >
-                {filteredScholarships.length} Available
-              </span>
-            </h2>
-            <p className="font-sans text-xs text-muted mt-0.5">
-              Ranked according to eligibility match for your academic profile.
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b-2 border-border">
+          <div className="flex items-start gap-3">
+            <span className="font-serif text-3xl sm:text-4xl font-black text-text/30 dark:text-text/20 select-none">
+              02
+            </span>
+            <div>
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-text flex items-center gap-2">
+                <span>All Gazette Opportunities</span>
+                <span
+                  className="font-mono text-xs font-bold px-2 py-0.5 rounded-[2px] bg-surface-2 text-text border border-border"
+                  aria-live="polite"
+                >
+                  {filteredScholarships.length} Available
+                </span>
+              </h2>
+              <p className="font-sans text-xs text-muted mt-0.5">
+                Ranked according to eligibility match for your academic profile.
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -461,8 +505,8 @@ export const DiscoverPage: React.FC = () => {
         {/* Content Layout: Filter Sidebar + Ruled List (Desktop) / Cards (Mobile) */}
         <div className="pt-6 flex flex-col lg:flex-row items-start gap-8">
           
-          {/* Desktop Filter Sidebar */}
-          <div className="hidden lg:block">
+          {/* Desktop Filter Sidebar (Sticky) */}
+          <div className="hidden lg:block sticky top-6 self-start shrink-0">
             <FilterSidebar
               filters={filters}
               onChange={handleFilterChange}
@@ -526,52 +570,68 @@ export const DiscoverPage: React.FC = () => {
               </div>
             ) : filteredScholarships.length > 0 ? (
               <>
-                {/* ONE LARGE FEATURED SCHOLARSHIP (Broadsheet Lead Story) */}
+                {/* ONE LARGE FEATURED SCHOLARSHIP (Deep Green Broadsheet Lead Story) */}
                 {featuredScholarship && (
-                  <section aria-label="Featured scheme notice" className="bg-surface rounded-[4px] border-2 border-primary/40 p-6 sm:p-8 space-y-4 shadow-xs">
-                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-border">
+                  <section
+                    aria-label="Featured scheme notice"
+                    className="bg-[#1F4D3A] text-[#FBF8F1] dark:bg-[#12241C] dark:text-[#F2ECDD] rounded-[4px] border-2 border-[#1F4D3A] dark:border-[#1F4D3A]/70 p-6 sm:p-8 relative crop-mark-container shadow-hard-lg overflow-hidden transition-colors"
+                  >
+                    {/* Newspaper printing corner crop marks */}
+                    <span className="crop-mark-tl text-[#FBF8F1] dark:text-[#7FBF9E]" />
+                    <span className="crop-mark-tr text-[#FBF8F1] dark:text-[#7FBF9E]" />
+                    <span className="crop-mark-bl text-[#FBF8F1] dark:text-[#7FBF9E]" />
+                    <span className="crop-mark-br text-[#FBF8F1] dark:text-[#7FBF9E]" />
+
+                    {/* Background subtle illustration watermark */}
+                    <div className="absolute -right-8 -bottom-8 pointer-events-none opacity-20 dark:opacity-10 text-[#FBF8F1]">
+                      <StampedDocumentIllustration size={220} />
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[#FBF8F1]/20 dark:border-white/10 relative z-10">
                       <div className="flex items-center gap-2">
-                        <span className="font-sans text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 bg-primary text-primary-contrast rounded-[2px]">
+                        <span className="font-sans text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 bg-accent text-primary-contrast rounded-[2px]">
                           Lead Gazette Notice
                         </span>
-                        <span className="font-mono text-xs font-bold text-primary">
+                        <span className="font-mono text-xs font-bold text-[#7FBF9E]">
                           {profile.isOnboarded ? `${calculateMatch(featuredScholarship).score}% ELIGIBILITY MATCH` : 'CREATE PROFILE TO SEE MATCH'}
                         </span>
                       </div>
-                      <div className="deadline-stamp">
+                      <div className="deadline-stamp border-accent text-accent bg-[#FBF8F1] dark:bg-[#1C1A16]">
                         <Clock size={12} weight="bold" />
                         <span>{formatDeadlineBadge(featuredScholarship.deadline).text}</span>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <p className="font-sans text-xs font-bold uppercase tracking-wider text-muted">
-                        {featuredScholarship.provider}
-                      </p>
-                      <h3 className="font-serif text-2xl sm:text-3xl font-black text-text leading-tight hover:text-primary transition-colors">
-                        <Link to={`/scholarship/${featuredScholarship.id}`}>
-                          {featuredScholarship.name}
-                        </Link>
-                      </h3>
-                      <p className="font-sans text-sm text-muted leading-relaxed line-clamp-3">
-                        {featuredScholarship.description}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-border">
-                      <div>
-                        <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-muted block">
-                          Total Grant Amount
-                        </span>
-                        <span className="font-mono text-2xl font-bold text-primary">
-                          {featuredScholarship.amountFormatted}
-                        </span>
+                    {/* Asymmetric 2/3 + 1/3 Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 items-center relative z-10">
+                      <div className="lg:col-span-2 space-y-2">
+                        <p className="font-sans text-xs font-bold uppercase tracking-wider text-[#FBF8F1]/70 dark:text-[#A39C8C]">
+                          {featuredScholarship.provider}
+                        </p>
+                        <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl font-black text-[#FBF8F1] leading-tight hover:text-[#7FBF9E] transition-colors">
+                          <Link to={`/scholarship/${featuredScholarship.id}`}>
+                            {featuredScholarship.name}
+                          </Link>
+                        </h3>
+                        <p className="font-sans text-sm text-[#FBF8F1]/85 dark:text-[#A39C8C] leading-relaxed line-clamp-3">
+                          {featuredScholarship.description}
+                        </p>
                       </div>
 
-                      <div className="flex items-center gap-2.5">
+                      {/* 1/3 Tall Amount & Action Box */}
+                      <div className="lg:col-span-1 lg:border-l lg:border-[#FBF8F1]/20 lg:pl-6 flex flex-col justify-between space-y-4">
+                        <div>
+                          <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-[#FBF8F1]/70 dark:text-[#A39C8C] block">
+                            Total Grant Value
+                          </span>
+                          <span className="font-serif lining-nums text-3xl sm:text-4xl font-black text-[#7FBF9E] block mt-0.5">
+                            {featuredScholarship.amountFormatted}
+                          </span>
+                        </div>
+
                         <Link
                           to={`/scholarship/${featuredScholarship.id}`}
-                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[2px] bg-primary text-primary-contrast text-xs font-semibold hover:opacity-90 transition-opacity min-h-[44px]"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[2px] bg-[#FBF8F1] text-[#1B1A17] hover:bg-white text-xs font-bold uppercase tracking-wider shadow-hard active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all min-h-[44px]"
                         >
                           <span>Examine Full Dossier</span>
                           <ArrowRight size={14} />

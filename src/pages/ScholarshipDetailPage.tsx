@@ -169,8 +169,12 @@ export const ScholarshipDetailPage: React.FC = () => {
 
       <main id="main-content" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
-        {/* HEADER HERO CARD */}
-        <div className="bg-surface rounded-[4px] border border-border p-6 sm:p-8 relative overflow-hidden transition-colors">
+        {/* HEADER HERO CARD with Corner Crop Marks & Hard Shadow */}
+        <div className="bg-surface rounded-[4px] border border-border p-6 sm:p-8 relative crop-mark-container shadow-hard-lg overflow-hidden transition-colors">
+          <span className="crop-mark-tl text-border-strong" />
+          <span className="crop-mark-tr text-border-strong" />
+          <span className="crop-mark-bl text-border-strong" />
+          <span className="crop-mark-br text-border-strong" />
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
             
             {/* Title & Metadata */}

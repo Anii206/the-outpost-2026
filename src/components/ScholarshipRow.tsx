@@ -54,8 +54,8 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
 
   return (
     <article
-      className={`group relative flex items-center justify-between p-4 sm:p-5 bg-surface hover:bg-surface-2/60 transition-colors border-b border-border ${
-        compared ? 'bg-primary/5' : ''
+      className={`group relative flex items-center justify-between p-4 sm:p-5 bg-surface hover:bg-surface-2/80 transition-all duration-200 border-b border-border border-l-[3px] border-l-transparent hover:border-l-accent ${
+        compared ? 'bg-primary/5 border-l-primary' : ''
       }`}
       aria-labelledby={`row-title-${scholarship.id}`}
     >
@@ -124,7 +124,7 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
       </div>
 
       {/* Middle Column: Amount & Stamp */}
-      <div className="shrink-0 flex flex-col items-end gap-2 pr-6 text-right">
+      <div className="shrink-0 flex flex-col items-end gap-2 pr-6 text-right group-hover:-translate-x-1.5 transition-transform duration-200">
         <div>
           <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-muted block">
             Award Grant
