@@ -36,19 +36,22 @@ export const DashboardPage: React.FC = () => {
     return Math.round((filled / totalFields) * 100);
   }, [profile]);
 
-  // 2. Total Potential Funding Eligible For (where match >= 70%)
+  // 2. Total Potential Funding Eligible For (where eligible and match >= 75%)
   const { eligibleTotalAmount, eligibleCount } = useMemo(() => {
+    if (!profile.isOnboarded) {
+      return { eligibleTotalAmount: 0, eligibleCount: 0 };
+    }
     let total = 0;
     let count = 0;
     SCHOLARSHIPS.forEach((sch) => {
       const match = calculateMatch(sch);
-      if (match.score >= 70) {
+      if (match.isEligible && match.score >= 75) {
         total += sch.amount;
         count++;
       }
     });
     return { eligibleTotalAmount: total, eligibleCount: count };
-  }, [calculateMatch]);
+  }, [calculateMatch, profile.isOnboarded]);
 
   // 3. Pipeline counts
   const pipelineCounts = useMemo(() => {
@@ -93,10 +96,17 @@ export const DashboardPage: React.FC = () => {
     return { totalRequired, totalGathered, percent };
   }, [trackerItems, checkedDocs]);
 
-  // 5. Recommended Top 3 by Match Score
+  // 5. Recommended Top 3 by Match Score (Eligible schemes prioritized)
   const recommendedScholarships = useMemo(() => {
     return [...SCHOLARSHIPS]
-      .sort((a, b) => calculateMatch(b).score - calculateMatch(a).score)
+      .sort((a, b) => {
+        const ma = calculateMatch(a);
+        const mb = calculateMatch(b);
+        if (ma.isEligible !== mb.isEligible) {
+          return ma.isEligible ? -1 : 1;
+        }
+        return mb.score - ma.score;
+      })
       .slice(0, 3);
   }, [calculateMatch]);
 

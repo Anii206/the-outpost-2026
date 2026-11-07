@@ -16,6 +16,7 @@ import { formatReadableDate, formatDeadlineBadge } from '../utils/dateUtils';
 export const ComparePage: React.FC = () => {
   usePageTitle('Side-by-Side Scheme Comparison — Grantly Gazette');
   const {
+    profile,
     compareIds,
     toggleCompare,
     clearCompare,
@@ -64,10 +65,25 @@ export const ComparePage: React.FC = () => {
     {
       label: 'Dossier Match %',
       render: (s: typeof comparedScholarships[0]) => {
+        if (!profile.isOnboarded) {
+          return (
+            <Link to="/profile" className="text-xs text-muted hover:text-primary font-mono underline">
+              Set Profile
+            </Link>
+          );
+        }
         const match = calculateMatch(s);
         return (
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] font-mono text-xs font-bold bg-primary/10 text-primary border border-primary/25">
-            <span>{match.score}% MATCH</span>
+          <div
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] font-mono text-xs font-bold ${
+              !match.isEligible
+                ? 'bg-danger/10 text-danger border border-danger/25'
+                : match.score >= 80
+                ? 'bg-primary/10 text-primary border border-primary/25'
+                : 'bg-accent/15 text-accent border border-accent/25'
+            }`}
+          >
+            <span>{match.score}% {match.isEligible ? 'MATCH' : 'NOT ELIGIBLE'}</span>
           </div>
         );
       },

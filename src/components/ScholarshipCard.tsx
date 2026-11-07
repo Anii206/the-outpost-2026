@@ -92,15 +92,15 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
             {profile.isOnboarded ? (
               <div
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-xs font-mono font-bold ${
-                  matchResult.score >= 80
+                  !matchResult.isEligible
+                    ? 'bg-danger/10 text-danger border border-danger/25'
+                    : matchResult.score >= 80
                     ? 'bg-primary/10 text-primary border border-primary/25'
-                    : matchResult.score >= 60
-                    ? 'bg-accent/15 text-accent border border-accent/25'
-                    : 'bg-surface-2 text-muted border border-border'
+                    : 'bg-accent/15 text-accent border border-accent/25'
                 }`}
                 title={matchResult.reasons.join('\n')}
               >
-                <span>{matchResult.score}% MATCH</span>
+                <span>{matchResult.score}% {matchResult.isEligible ? 'MATCH' : 'NOT ELIGIBLE'}</span>
               </div>
             ) : (
               <Link
@@ -108,7 +108,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[11px] font-mono text-muted hover:text-primary bg-surface-2 border border-border transition-colors"
                 title="Create your profile to calculate match"
               >
-                <span>Match: Set Profile</span>
+                <span>Create profile to see match</span>
               </Link>
             )}
 

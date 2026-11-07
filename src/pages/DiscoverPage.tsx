@@ -200,13 +200,23 @@ export const DiscoverPage: React.FC = () => {
       list = list.filter((item) => isSaved(item.id));
     }
     if (onlyHighMatch) {
-      list = list.filter((item) => calculateMatch(item).score >= 75);
+      list = list.filter((item) => {
+        const m = calculateMatch(item);
+        return m.isEligible && m.score >= 75;
+      });
     }
 
     // Sorting
     const sorted = [...list];
     if (filters.sortBy === 'match-desc') {
-      sorted.sort((a, b) => calculateMatch(b).score - calculateMatch(a).score);
+      sorted.sort((a, b) => {
+        const ma = calculateMatch(a);
+        const mb = calculateMatch(b);
+        if (ma.isEligible !== mb.isEligible) {
+          return ma.isEligible ? -1 : 1;
+        }
+        return mb.score - ma.score;
+      });
     } else if (filters.sortBy === 'deadline-asc') {
       sorted.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
     } else if (filters.sortBy === 'amount-desc') {
@@ -667,7 +677,12 @@ export const DiscoverPage: React.FC = () => {
                           Lead Gazette Notice
                         </span>
                         <span className="font-mono text-xs font-bold text-[#7FBF9E]">
-                          {profile.isOnboarded ? `${calculateMatch(featuredScholarship).score}% ELIGIBILITY MATCH` : 'CREATE PROFILE TO SEE MATCH'}
+                          {profile.isOnboarded
+                            ? (() => {
+                                const m = calculateMatch(featuredScholarship);
+                                return `${m.score}% ${m.isEligible ? 'ELIGIBILITY MATCH' : 'NOT ELIGIBLE'}`;
+                              })()
+                            : 'CREATE PROFILE TO SEE MATCH'}
                         </span>
                       </div>
                       <div className="deadline-stamp border-accent text-accent bg-[#FBF8F1] dark:bg-[#1C1A16]">

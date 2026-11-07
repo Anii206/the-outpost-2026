@@ -29,6 +29,7 @@ import { ScholarshipCard } from '../components/ScholarshipCard';
 export const ScholarshipDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const {
+    profile,
     isSaved,
     toggleSave,
     calculateMatch,
@@ -263,51 +264,73 @@ export const ScholarshipDetailPage: React.FC = () => {
 
             {/* Match Score Ring Component */}
             <div className="shrink-0 flex flex-col items-center justify-center p-5 rounded-[4px] bg-surface-2 border border-border w-full sm:w-52 text-center">
-              <div className="relative w-24 h-24 flex items-center justify-center mb-2">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    stroke="var(--border)"
-                    strokeWidth="7"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    stroke={
-                      matchResult.score >= 80
-                        ? 'var(--primary)'
-                        : matchResult.score >= 60
-                        ? 'var(--accent)'
-                        : 'var(--text-muted)'
-                    }
-                    strokeWidth="7"
-                    strokeDasharray={251.2}
-                    strokeDashoffset={251.2 - (251.2 * matchResult.score) / 100}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    className="transition-all duration-700 ease-out"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="font-mono text-xl font-bold text-text leading-none">
-                    {matchResult.score}%
-                  </span>
-                  <span className="font-sans text-[9px] font-bold text-muted uppercase tracking-wider mt-0.5">
-                    Match
-                  </span>
-                </div>
-              </div>
+              {profile.isOnboarded ? (
+                <>
+                  <div className="relative w-24 h-24 flex items-center justify-center mb-2">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        stroke="var(--border)"
+                        strokeWidth="7"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        stroke={
+                          !matchResult.isEligible
+                            ? 'var(--danger, #DC2626)'
+                            : matchResult.score >= 80
+                            ? 'var(--primary)'
+                            : 'var(--accent)'
+                        }
+                        strokeWidth="7"
+                        strokeDasharray={251.2}
+                        strokeDashoffset={251.2 - (251.2 * matchResult.score) / 100}
+                        strokeLinecap="round"
+                        fill="transparent"
+                        className="transition-all duration-700 ease-out"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className={`font-mono text-xl font-bold leading-none ${!matchResult.isEligible ? 'text-danger' : 'text-text'}`}>
+                        {matchResult.score}%
+                      </span>
+                      <span className="font-sans text-[9px] font-bold text-muted uppercase tracking-wider mt-0.5">
+                        {matchResult.isEligible ? 'Match' : 'Ineligible'}
+                      </span>
+                    </div>
+                  </div>
 
-              <div className="font-sans text-xs font-bold text-text">
-                <span>{matchResult.score >= 75 ? 'Strong Eligibility Fit' : 'Moderate Compatibility'}</span>
-              </div>
-              <p className="font-sans text-[11px] text-muted mt-0.5">
-                Evaluated against student dossier
-              </p>
+                  <div className={`font-sans text-xs font-bold ${!matchResult.isEligible ? 'text-danger' : 'text-text'}`}>
+                    <span>
+                      {!matchResult.isEligible
+                        ? 'Not Eligible'
+                        : matchResult.score >= 85
+                        ? 'Strong Eligibility Fit'
+                        : 'Moderate Compatibility'}
+                    </span>
+                  </div>
+                  <p className="font-sans text-[11px] text-muted mt-0.5">
+                    Evaluated against student dossier
+                  </p>
+                </>
+              ) : (
+                <div className="py-4 space-y-2">
+                  <p className="font-sans text-xs font-semibold text-muted">
+                    Create a profile to see matches
+                  </p>
+                  <Link
+                    to="/profile"
+                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-[2px] bg-primary text-primary-contrast text-xs font-semibold hover:opacity-90 transition-opacity min-h-[38px]"
+                  >
+                    Set Up Profile
+                  </Link>
+                </div>
+              )}
             </div>
 
           </div>
@@ -333,64 +356,78 @@ export const ScholarshipDetailPage: React.FC = () => {
 
             {/* Rules Cards */}
             <div className="space-y-2.5">
-              {matchResult.rules.map((rule) => {
-                const isMet = rule.status === 'met';
-                const isNotMet = rule.status === 'not-met';
+              {matchResult.rules.length > 0 ? (
+                matchResult.rules.map((rule) => {
+                  const isMet = rule.status === 'met';
+                  const isNotMet = rule.status === 'not-met';
 
-                return (
-                  <div
-                    key={rule.id}
-                    className={`p-3.5 rounded-[2px] border transition-colors ${
-                      isMet
-                        ? 'bg-primary/5 border-primary/20 text-text'
-                        : isNotMet
-                        ? 'bg-danger/5 border-danger/20 text-text'
-                        : 'bg-accent/5 border-accent/20 text-text'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          {isMet ? (
-                            <CheckCircle size={15} className="text-primary shrink-0" />
-                          ) : isNotMet ? (
-                            <XCircle size={15} className="text-danger shrink-0" />
-                          ) : (
-                            <Question size={15} className="text-accent shrink-0" />
-                          )}
-                          <span className="font-serif text-sm font-bold text-text">
-                            {rule.label}
-                          </span>
+                  return (
+                    <div
+                      key={rule.id}
+                      className={`p-3.5 rounded-[2px] border transition-colors ${
+                        isMet
+                          ? 'bg-primary/5 border-primary/20 text-text'
+                          : isNotMet
+                          ? 'bg-danger/5 border-danger/20 text-text'
+                          : 'bg-accent/5 border-accent/20 text-text'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            {isMet ? (
+                              <CheckCircle size={15} className="text-primary shrink-0" />
+                            ) : isNotMet ? (
+                              <XCircle size={15} className="text-danger shrink-0" />
+                            ) : (
+                              <Question size={15} className="text-accent shrink-0" />
+                            )}
+                            <span className="font-serif text-sm font-bold text-text">
+                              {rule.label}
+                            </span>
+                          </div>
+                          <p className="font-sans text-xs text-text pl-5">
+                            <span className="font-semibold text-muted">Scheme Requirement: </span>
+                            {rule.requirement}
+                          </p>
+                          <p className="font-sans text-xs text-text pl-5">
+                            <span className="font-semibold text-muted">Your Profile: </span>
+                            <span className={isMet ? 'text-primary font-bold' : isNotMet ? 'text-danger font-bold' : 'text-accent font-bold'}>
+                              {rule.actual}
+                            </span>
+                            {' — '}
+                            <span className="italic text-muted">{rule.reason}</span>
+                          </p>
                         </div>
-                        <p className="font-sans text-xs text-text pl-5">
-                          <span className="font-semibold text-muted">Scheme Requirement: </span>
-                          {rule.requirement}
-                        </p>
-                        <p className="font-sans text-xs text-text pl-5">
-                          <span className="font-semibold text-muted">Your Profile: </span>
-                          <span className={isMet ? 'text-primary font-bold' : 'text-danger font-bold'}>
-                            {rule.actual}
-                          </span>
-                          {' — '}
-                          <span className="italic text-muted">{rule.reason}</span>
-                        </p>
-                      </div>
 
-                      <span
-                        className={`font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded-[2px] shrink-0 ${
-                          isMet
-                            ? 'bg-primary/10 text-primary border border-primary/25'
-                            : isNotMet
-                            ? 'bg-danger/10 text-danger border border-danger/25'
-                            : 'bg-accent/15 text-accent border border-accent/25'
-                        }`}
-                      >
-                        {isMet ? 'Criteria Met' : isNotMet ? 'Unmet' : 'Review'}
-                      </span>
+                        <span
+                          className={`font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded-[2px] shrink-0 ${
+                            isMet
+                              ? 'bg-primary/10 text-primary border border-primary/25'
+                              : isNotMet
+                              ? 'bg-danger/10 text-danger border border-danger/25'
+                              : 'bg-accent/15 text-accent border border-accent/25'
+                          }`}
+                        >
+                          {isMet ? 'Criteria Met' : isNotMet ? 'Unmet' : 'Review'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="p-6 text-center bg-surface-2 rounded-[2px] border border-border">
+                  <p className="font-sans text-xs text-muted mb-3">
+                    Create your student profile to evaluate notification criteria and see rule-by-rule verification breakdown.
+                  </p>
+                  <Link
+                    to="/profile"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-contrast text-xs font-semibold rounded-[2px] hover:opacity-90 min-h-[38px]"
+                  >
+                    Set Up Profile
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Scheme Descriptions */}

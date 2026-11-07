@@ -70,9 +70,28 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
       <div className="flex items-start gap-4 flex-1 min-w-0 pr-6">
         {/* Match Score Badge */}
         {profile.isOnboarded ? (
-          <div className="shrink-0 flex flex-col items-center justify-center w-14 py-2 px-1 rounded-[2px] border border-border bg-surface-2 text-center">
-            <span className="font-mono text-sm font-bold text-primary">{matchResult.score}%</span>
-            <span className="text-[9px] uppercase font-bold tracking-wider text-muted font-sans">Match</span>
+          <div
+            className={`shrink-0 flex flex-col items-center justify-center w-14 py-2 px-1 rounded-[2px] border text-center ${
+              !matchResult.isEligible
+                ? 'border-danger/25 bg-danger/5'
+                : 'border-border bg-surface-2'
+            }`}
+            title={matchResult.reasons.join('\n')}
+          >
+            <span
+              className={`font-mono text-sm font-bold ${
+                !matchResult.isEligible ? 'text-danger' : 'text-primary'
+              }`}
+            >
+              {matchResult.score}%
+            </span>
+            <span
+              className={`text-[9px] uppercase font-bold tracking-wider font-sans ${
+                !matchResult.isEligible ? 'text-danger' : 'text-muted'
+              }`}
+            >
+              {matchResult.isEligible ? 'Fit' : 'Ineligible'}
+            </span>
           </div>
         ) : (
           <Link
@@ -81,7 +100,7 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
             title="Create your profile to see matches"
           >
             <span className="font-mono text-xs font-bold text-muted">--</span>
-            <span className="text-[9px] uppercase font-bold tracking-wider text-muted font-sans">Match</span>
+            <span className="text-[9px] uppercase font-bold tracking-wider text-muted font-sans">Set Profile</span>
           </Link>
         )}
 
