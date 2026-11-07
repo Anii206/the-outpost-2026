@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Bookmark, 
-  Calendar, 
   CheckCircle2, 
   ChevronRight, 
   GraduationCap, 
   MapPin, 
   Sparkles,
-  KanbanSquare
+  KanbanSquare,
+  Clock
 } from 'lucide-react';
 import type { Scholarship, TrackerStatus } from '../types';
 import { useApp } from '../context/AppContext';
@@ -29,12 +29,11 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
   const matchResult = calculateMatch(scholarship);
   const deadlineInfo = formatDeadlineBadge(scholarship.deadline);
 
-  // Status colors & labels for tracker dropdown
-  const trackerStatusOptions: { status: TrackerStatus; label: string; color: string }[] = [
-    { status: 'saved', label: 'Saved', color: 'bg-stone-100 text-stone-800' },
-    { status: 'applying', label: 'Applying', color: 'bg-amber-100 text-amber-900' },
-    { status: 'submitted', label: 'Submitted', color: 'bg-blue-100 text-blue-900' },
-    { status: 'awarded', label: 'Awarded', color: 'bg-emerald-100 text-emerald-900' },
+  const trackerStatusOptions: { status: TrackerStatus; label: string }[] = [
+    { status: 'saved', label: 'Saved' },
+    { status: 'applying', label: 'Applying' },
+    { status: 'submitted', label: 'Submitted' },
+    { status: 'awarded', label: 'Awarded' },
   ];
 
   return (
@@ -51,10 +50,11 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
       aria-labelledby={`scholarship-title-${scholarship.id}`}
     >
       <div>
-        {/* Top Badges & Save Action */}
+        {/* Top Badges & Bookmark */}
         <div className="flex items-center justify-between gap-2 mb-3.5">
           <div className="flex items-center flex-wrap gap-2">
-            {/* Match Score Badge */}
+            
+            {/* Match Percentage Badge */}
             <div
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide ${
                 matchResult.score >= 80
@@ -76,7 +76,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
               </span>
             )}
 
-            {/* Active Tracker Pill if present */}
+            {/* Active Tracker Stage Pill */}
             {currentTrackerStatus && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-stone-100 text-stone-800 capitalize border border-stone-200">
                 <KanbanSquare className="w-3 h-3 text-[#133E2B]" />
@@ -112,7 +112,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
         {/* Title */}
         <h3 
           id={`scholarship-title-${scholarship.id}`}
-          className="text-lg font-bold text-stone-900 leading-snug group hover:text-[#133E2B] transition-colors mb-2"
+          className="text-base sm:text-lg font-bold text-stone-900 leading-snug group hover:text-[#133E2B] transition-colors mb-2"
         >
           <Link to={`/scholarship/${scholarship.id}`} className="focus:outline-none focus:underline">
             {scholarship.name}
@@ -120,11 +120,11 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
         </h3>
 
         {/* Description snippet */}
-        <p className="text-sm text-stone-600 line-clamp-2 leading-relaxed mb-4">
+        <p className="text-xs sm:text-sm text-stone-600 line-clamp-2 leading-relaxed mb-4">
           {scholarship.description}
         </p>
 
-        {/* Tag pills (Level, Category, Country) */}
+        {/* Tags (Level, Category, Country/State) */}
         <div className="flex flex-wrap items-center gap-1.5 mb-5 text-xs text-stone-600">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 font-medium">
             <GraduationCap className="w-3 h-3 text-stone-500" />
@@ -135,17 +135,17 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
           </span>
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 font-medium">
             <MapPin className="w-3 h-3 text-stone-500" />
-            {scholarship.country}
+            {scholarship.eligibilityRules.targetStates?.[0] || scholarship.country}
           </span>
         </div>
       </div>
 
       <div>
-        {/* Key Metrics: Amount & Deadline */}
+        {/* Award Amount & Deadline (Red when < 7 days, Amber when < 14 days) */}
         <div className="pt-4 border-t border-stone-100 flex items-end justify-between gap-3 mb-4">
           <div>
             <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider block">Award Amount</span>
-            <div className="text-xl sm:text-2xl font-extrabold text-[#133E2B] flex items-center">
+            <div className="text-lg sm:text-xl font-extrabold text-[#133E2B] flex items-center">
               <span>{scholarship.amountFormatted}</span>
             </div>
           </div>
@@ -153,14 +153,16 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
           <div className="text-right">
             <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider block">Deadline</span>
             <div
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                deadlineInfo.isUrgent
-                  ? 'bg-amber-50 text-amber-800 border border-amber-300 font-bold'
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ${
+                deadlineInfo.isCritical
+                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                  : deadlineInfo.isUrgent
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
                   : 'bg-stone-100 text-stone-700'
               }`}
-              title={`Due ${formatReadableDate(scholarship.deadline)}`}
+              title={`Due on ${formatReadableDate(scholarship.deadline)}`}
             >
-              <Calendar className={`w-3.5 h-3.5 ${deadlineInfo.isUrgent ? 'text-amber-600' : 'text-stone-500'}`} />
+              <Clock className="w-3 h-3" />
               <span>{deadlineInfo.text}</span>
             </div>
           </div>
@@ -170,20 +172,20 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
         <div className="flex items-center gap-2 pt-1 relative">
           <Link
             to={`/scholarship/${scholarship.id}`}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#133E2B] hover:bg-[#1B533A] text-white text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#133E2B] focus:ring-offset-2"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#133E2B] hover:bg-[#1B533A] text-white text-xs sm:text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#133E2B] focus:ring-offset-2"
           >
             <span>View Details</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
 
-          {/* Quick tracker dropdown button */}
+          {/* Quick tracker status toggle */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setShowStatusMenu(!showStatusMenu)}
               className="p-2.5 rounded-xl border border-stone-200 hover:border-stone-300 bg-white hover:bg-stone-50 text-stone-700 transition-colors focus:outline-none focus:ring-2 focus:ring-[#133E2B]"
               aria-label="Manage tracker status"
-              title="Change tracker status"
+              title="Set application stage"
             >
               <KanbanSquare className="w-4 h-4" />
             </button>
@@ -196,7 +198,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
                 />
                 <div className="absolute right-0 bottom-full mb-2 z-30 w-44 bg-white rounded-xl shadow-lg border border-stone-200 py-1 text-xs">
                   <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-stone-400 border-b border-stone-100">
-                    Set Tracker Status
+                    Set Application Stage
                   </div>
                   {trackerStatusOptions.map(opt => (
                     <button

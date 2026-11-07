@@ -2,16 +2,17 @@ import React from 'react';
 import { 
   Filter, 
   RotateCcw, 
-  DollarSign, 
+  IndianRupee, 
   Calendar, 
   GraduationCap, 
   Tag, 
   Check, 
-  Sparkles,
-  Bookmark
+  Sparkles, 
+  Bookmark,
+  MapPin
 } from 'lucide-react';
 import type { FilterState } from '../types';
-import { ALL_CATEGORIES, ALL_LEVELS } from '../data/scholarships';
+import { ALL_CATEGORIES, ALL_LEVELS, INDIAN_STATES } from '../data/scholarships';
 
 interface FilterSidebarProps {
   filters: FilterState;
@@ -39,6 +40,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const isFiltered = 
     filters.level !== 'All Levels' || 
     filters.category !== 'All Categories' || 
+    filters.state !== 'All India' ||
     filters.minAmount > 0 || 
     filters.deadlineRange !== 'all' || 
     filters.search !== '' ||
@@ -96,11 +98,11 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </label>
         </div>
 
-        {/* Level Filter */}
+        {/* Education Level Filter */}
         <div className="pt-5 border-t border-stone-100 mt-5">
           <label className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider mb-2.5">
             <GraduationCap className="w-3.5 h-3.5 text-stone-500" />
-            <span>Academic Level</span>
+            <span>Course Level</span>
           </label>
           <div className="space-y-1">
             {ALL_LEVELS.map((level) => (
@@ -121,13 +123,13 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </div>
         </div>
 
-        {/* Category Filter */}
+        {/* Scheme Category Filter */}
         <div className="pt-5 border-t border-stone-100 mt-5">
           <label className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider mb-2.5">
             <Tag className="w-3.5 h-3.5 text-stone-500" />
-            <span>Category</span>
+            <span>Scheme Type</span>
           </label>
-          <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+          <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
             {ALL_CATEGORIES.map((category) => (
               <button
                 key={category}
@@ -146,36 +148,54 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </div>
         </div>
 
-        {/* Minimum Award Amount */}
+        {/* State / Domicile Filter */}
+        <div className="pt-5 border-t border-stone-100 mt-5">
+          <label htmlFor="filter-state" className="flex items-center gap-1.5 text-xs font-bold text-stone-800 uppercase tracking-wider mb-2">
+            <MapPin className="w-3.5 h-3.5 text-stone-500" />
+            <span>State of Domicile</span>
+          </label>
+          <select
+            id="filter-state"
+            value={filters.state}
+            onChange={(e) => onChange({ state: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-semibold text-stone-800 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-[#133E2B]"
+          >
+            {INDIAN_STATES.map((st) => (
+              <option key={st} value={st}>{st}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Minimum Award in INR */}
         <div className="pt-5 border-t border-stone-100 mt-5">
           <div className="flex items-center justify-between mb-2">
             <label className="flex items-center gap-1.5 text-xs font-bold text-stone-800 uppercase tracking-wider">
-              <DollarSign className="w-3.5 h-3.5 text-stone-500" />
-              <span>Minimum Amount</span>
+              <IndianRupee className="w-3.5 h-3.5 text-stone-500" />
+              <span>Min Amount</span>
             </label>
             <span className="text-xs font-extrabold text-[#133E2B]">
-              {filters.minAmount > 0 ? `$${filters.minAmount.toLocaleString()}+` : 'Any'}
+              {filters.minAmount > 0 ? `₹${(filters.minAmount / 1000).toLocaleString('en-IN')}k+` : 'Any'}
             </span>
           </div>
           <input
             type="range"
             min="0"
-            max="60000"
-            step="5000"
+            max="200000"
+            step="10000"
             value={filters.minAmount}
             onChange={(e) => onChange({ minAmount: parseInt(e.target.value, 10) })}
             className="w-full accent-[#133E2B] cursor-pointer"
-            aria-label="Filter by minimum scholarship amount"
+            aria-label="Filter by minimum scholarship amount in INR"
           />
           <div className="flex justify-between text-[10px] text-stone-500 mt-1">
-            <span>$0</span>
-            <span>$25k</span>
-            <span>$60k+</span>
+            <span>₹0</span>
+            <span>₹1.0 Lakh</span>
+            <span>₹2.0 Lakh+</span>
           </div>
 
           {/* Quick Amount Buttons */}
           <div className="grid grid-cols-4 gap-1.5 mt-3">
-            {[0, 10000, 20000, 50000].map((amt) => (
+            {[0, 25000, 50000, 100000].map((amt) => (
               <button
                 key={amt}
                 type="button"
@@ -186,7 +206,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     : 'border-stone-200 text-stone-700 hover:bg-stone-50'
                 }`}
               >
-                {amt === 0 ? 'All' : `$${amt / 1000}k`}
+                {amt === 0 ? 'All' : `₹${amt / 1000}k`}
               </button>
             ))}
           </div>
@@ -226,7 +246,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
       {/* Side summary box */}
       <div className="bg-[#E2F1E9]/60 rounded-2xl p-4 border border-emerald-200 text-xs text-stone-700">
         <p className="font-bold text-[#133E2B] mb-1">Scholarships Found</p>
-        <p>Showing <span className="font-bold text-stone-900">{filteredCount}</span> of <span className="font-bold text-stone-900">{totalCount}</span> active awards in our verified database.</p>
+        <p>Showing <span className="font-bold text-stone-900">{filteredCount}</span> of <span className="font-bold text-stone-900">{totalCount}</span> active schemes matching your criteria.</p>
       </div>
 
     </aside>

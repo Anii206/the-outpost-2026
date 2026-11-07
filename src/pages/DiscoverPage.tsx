@@ -1,10 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Search, 
   X, 
   SlidersHorizontal, 
   ArrowUpDown, 
-  Sparkles
+  Sparkles, 
+  AlertCircle,
+  ArrowRight
 } from 'lucide-react';
 import { SCHOLARSHIPS } from '../data/scholarships';
 import type { FilterState } from '../types';
@@ -25,7 +28,8 @@ export const DiscoverPage: React.FC = () => {
     level: 'All Levels',
     category: 'All Categories',
     minAmount: 0,
-    maxAmount: 100000,
+    maxAmount: 10000000,
+    state: 'All India',
     deadlineRange: 'all',
     sortBy: 'match-desc',
   });
@@ -57,7 +61,8 @@ export const DiscoverPage: React.FC = () => {
       level: 'All Levels',
       category: 'All Categories',
       minAmount: 0,
-      maxAmount: 100000,
+      maxAmount: 10000000,
+      state: 'All India',
       deadlineRange: 'all',
       sortBy: 'match-desc',
     });
@@ -94,17 +99,23 @@ export const DiscoverPage: React.FC = () => {
 
       // 3. Category
       if (filters.category !== 'All Categories') {
-        const matchesCategory = item.category === filters.category ||
-          (item.eligibilityRules.eligibleCategories && item.eligibilityRules.eligibleCategories.includes(filters.category));
-        if (!matchesCategory) return false;
+        if (item.category !== filters.category) return false;
       }
 
-      // 4. Minimum Amount
+      // 4. State / Domicile
+      if (filters.state !== 'All India') {
+        const targetStates = item.eligibilityRules.targetStates || ['All India'];
+        if (!targetStates.includes('All India') && !targetStates.includes(filters.state)) {
+          return false;
+        }
+      }
+
+      // 5. Minimum Amount in INR
       if (filters.minAmount > 0 && item.amount < filters.minAmount) {
         return false;
       }
 
-      // 5. Deadline Range
+      // 6. Deadline Range
       if (filters.deadlineRange !== 'all') {
         const days = getDaysRemaining(item.deadline);
         if (days < 0) return false; // expired
@@ -113,12 +124,12 @@ export const DiscoverPage: React.FC = () => {
         if (filters.deadlineRange === '90-days' && days > 90) return false;
       }
 
-      // 6. Only Saved
+      // 7. Only Saved
       if (onlySaved && !isSaved(item.id)) {
         return false;
       }
 
-      // 7. Only High Match
+      // 8. Only High Match
       if (onlyHighMatch) {
         const match = calculateMatch(item);
         if (match.score < 75) return false;
@@ -151,16 +162,37 @@ export const DiscoverPage: React.FC = () => {
   // Quick category pills on Hero
   const popularTags = [
     { label: 'All', category: 'All Categories' },
-    { label: 'STEM', category: 'STEM' },
-    { label: 'Women in Tech', category: 'Women in Tech' },
-    { label: 'First-Gen', category: 'First-Generation' },
-    { label: 'Need-Based', category: 'Need-Based' },
+    { label: 'Girls in STEM', category: 'Girls in STEM' },
+    { label: 'Corporate CSR', category: 'Corporate CSR' },
+    { label: 'SC/ST Welfare', category: 'SC/ST/OBC Welfare' },
+    { label: 'State Schemes', category: 'State Government Scheme' },
     { label: 'Merit-Based', category: 'Merit-Based' },
   ];
 
   return (
     <div className="min-h-screen pb-16">
       
+      {/* PROMPT BANNER: If profile is not fully onboarded */}
+      {!profile.isOnboarded && (
+        <aside aria-label="Profile setup alert" className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-amber-900">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Set up your profile in 60 seconds</strong> to calculate precise eligibility for state schemes, reservation benefits, and income ceilings.
+              </span>
+            </div>
+            <Link
+              to="/profile"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 transition-colors shadow-2xs"
+            >
+              <span>Complete Profile</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </aside>
+      )}
+
       {/* HERO SECTION */}
       <section className="relative overflow-hidden pt-10 pb-16 sm:pb-20 border-b border-stone-200/80 bg-gradient-to-b from-[#F3EEE5]/80 via-[#FAF8F5] to-[#FAF8F5]">
         
@@ -173,19 +205,23 @@ export const DiscoverPage: React.FC = () => {
           <div className="max-w-3xl mx-auto text-center space-y-4">
             
             {/* Tagline Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100/80 border border-emerald-200 text-[#133E2B] text-xs font-bold tracking-wide">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/80 border border-emerald-200 text-[#133E2B] text-xs font-bold tracking-wide">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Smart Match Engine Enabled for {profile.name.split(' ')[0]}</span>
+              <span>
+                {profile.isOnboarded 
+                  ? `Eligibility Active for ${profile.name.split(' ')[0]} (${profile.category} • ${profile.state})`
+                  : 'India’s Unified Scholarship Discovery Engine'}
+              </span>
             </div>
 
             {/* Main Headline */}
             <h1 className="text-3xl sm:text-5xl font-extrabold text-[#133E2B] tracking-tight leading-tight">
-              Discover Scholarships Built for Your Future
+              Find Scholarships Built for Indian Students
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg text-stone-600 leading-relaxed font-normal max-w-2xl mx-auto">
-              Explore 24 verified opportunities offering millions in grants and tuition awards. Filter by criteria, calculate match scores, and track applications effortlessly.
+            <p className="text-sm sm:text-base text-stone-600 leading-relaxed font-normal max-w-2xl mx-auto">
+              Explore 24 verified government and corporate schemes offering over ₹4.8 Crores in educational aid. Instant eligibility check for General, OBC, SC, ST & EWS categories.
             </p>
 
             {/* Main Search Input */}
@@ -197,7 +233,7 @@ export const DiscoverPage: React.FC = () => {
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange({ search: e.target.value })}
-                  placeholder="Search by scholarship title, provider, field, or keyword..."
+                  placeholder="Search NSP, AICTE, Reliance, Tata, State schemes, course..."
                   className="w-full py-4 px-3 text-stone-900 placeholder:text-stone-400 bg-transparent text-sm sm:text-base focus:outline-none"
                   aria-label="Search scholarships"
                 />
@@ -226,7 +262,7 @@ export const DiscoverPage: React.FC = () => {
                 <button
                   key={tag.label}
                   type="button"
-                  onClick={() => handleFilterChange({ category: tag.category })}
+                  onClick={() => handleFilterChange({ category: tag.category as any })}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     filters.category === tag.category
                       ? 'bg-[#133E2B] text-white shadow-xs'
@@ -240,49 +276,47 @@ export const DiscoverPage: React.FC = () => {
 
           </div>
 
-          {/* Quick Metrics Bar */}
+          {/* Metrics Bar with INR formatting */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-stone-200/80 p-4 text-center">
               <span className="text-2xl sm:text-3xl font-extrabold text-[#133E2B]">24</span>
-              <p className="text-xs font-medium text-stone-600 mt-0.5">Active Opportunities</p>
+              <p className="text-xs font-medium text-stone-600 mt-0.5">Verified Indian Schemes</p>
             </div>
             <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-stone-200/80 p-4 text-center">
-              <span className="text-2xl sm:text-3xl font-extrabold text-[#133E2B]">$1.2M+</span>
-              <p className="text-xs font-medium text-stone-600 mt-0.5">Total Funding</p>
+              <span className="text-2xl sm:text-3xl font-extrabold text-[#133E2B]">₹4.8 Cr+</span>
+              <p className="text-xs font-medium text-stone-600 mt-0.5">Total Available Aid</p>
             </div>
             <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-stone-200/80 p-4 text-center">
               <span className="text-2xl sm:text-3xl font-extrabold text-amber-600">8</span>
-              <p className="text-xs font-medium text-stone-600 mt-0.5">Closing Soon</p>
+              <p className="text-xs font-medium text-stone-600 mt-0.5">Closing In 14 Days</p>
             </div>
             <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-stone-200/80 p-4 text-center">
               <span className="text-2xl sm:text-3xl font-extrabold text-emerald-800">100%</span>
-              <p className="text-xs font-medium text-stone-600 mt-0.5">Verified & Free</p>
+              <p className="text-xs font-medium text-stone-600 mt-0.5">Free & Verified Portals</p>
             </div>
           </div>
 
         </div>
       </section>
 
-      {/* DISCOVER MAIN BODY */}
+      {/* MAIN CONTENT AREA */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
         {/* Controls Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200/70">
           
-          {/* Results count & active filter badges */}
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-              <span>All Scholarships</span>
+              <span>All Opportunities</span>
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-stone-200 text-stone-800">
                 {filteredScholarships.length}
               </span>
             </h2>
             <p className="text-xs text-stone-500">
-              Showing scholarships matching your academic level and eligibility criteria.
+              Sorted by best eligibility match for your current academic profile.
             </p>
           </div>
 
-          {/* Sort & Mobile Filter Toggle */}
           <div className="flex items-center gap-2.5">
             
             {/* Mobile Filter Trigger Button */}
@@ -293,12 +327,12 @@ export const DiscoverPage: React.FC = () => {
             >
               <SlidersHorizontal className="w-4 h-4 text-[#133E2B]" />
               <span>Filters</span>
-              {(filters.level !== 'All Levels' || filters.category !== 'All Categories' || filters.minAmount > 0 || onlySaved || onlyHighMatch) && (
+              {(filters.level !== 'All Levels' || filters.category !== 'All Categories' || filters.minAmount > 0 || filters.state !== 'All India' || onlySaved || onlyHighMatch) && (
                 <span className="w-2 h-2 rounded-full bg-amber-500" />
               )}
             </button>
 
-            {/* Sort Select */}
+            {/* Sort Dropdown */}
             <div className="flex items-center gap-2 bg-white border border-stone-200/90 rounded-xl px-3 py-2 shadow-xs">
               <ArrowUpDown className="w-4 h-4 text-stone-500 shrink-0" />
               <label htmlFor="sort-select" className="text-xs font-medium text-stone-600 shrink-0">
@@ -312,8 +346,8 @@ export const DiscoverPage: React.FC = () => {
               >
                 <option value="match-desc">Highest Match (%)</option>
                 <option value="deadline-asc">Deadline (Soonest)</option>
-                <option value="amount-desc">Award (Highest)</option>
-                <option value="amount-asc">Award (Lowest)</option>
+                <option value="amount-desc">Amount (Highest)</option>
+                <option value="amount-asc">Amount (Lowest)</option>
                 <option value="name-asc">Name (A-Z)</option>
               </select>
             </div>
@@ -324,6 +358,7 @@ export const DiscoverPage: React.FC = () => {
         {/* Active Filter Chips */}
         {(filters.level !== 'All Levels' || 
           filters.category !== 'All Categories' || 
+          filters.state !== 'All India' ||
           filters.minAmount > 0 || 
           filters.deadlineRange !== 'all' || 
           onlySaved || 
@@ -352,8 +387,17 @@ export const DiscoverPage: React.FC = () => {
 
             {filters.category !== 'All Categories' && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
-                Category: {filters.category}
+                Type: {filters.category}
                 <button type="button" onClick={() => handleFilterChange({ category: 'All Categories' })} aria-label="Remove category filter">
+                  <X className="w-3 h-3 hover:text-stone-900" />
+                </button>
+              </span>
+            )}
+
+            {filters.state !== 'All India' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
+                State: {filters.state}
+                <button type="button" onClick={() => handleFilterChange({ state: 'All India' })} aria-label="Remove state filter">
                   <X className="w-3 h-3 hover:text-stone-900" />
                 </button>
               </span>
@@ -361,17 +405,8 @@ export const DiscoverPage: React.FC = () => {
 
             {filters.minAmount > 0 && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
-                Min: ${filters.minAmount.toLocaleString()}
+                Min: ₹{(filters.minAmount / 1000).toLocaleString('en-IN')}k
                 <button type="button" onClick={() => handleFilterChange({ minAmount: 0 })} aria-label="Remove min amount filter">
-                  <X className="w-3 h-3 hover:text-stone-900" />
-                </button>
-              </span>
-            )}
-
-            {filters.deadlineRange !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
-                Window: {filters.deadlineRange}
-                <button type="button" onClick={() => handleFilterChange({ deadlineRange: 'all' })} aria-label="Remove deadline filter">
                   <X className="w-3 h-3 hover:text-stone-900" />
                 </button>
               </span>
@@ -423,7 +458,7 @@ export const DiscoverPage: React.FC = () => {
             />
           </div>
 
-          {/* Mobile Filter Modal / Drawer */}
+          {/* Mobile Filter Modal */}
           {mobileFilterOpen && (
             <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
               <div 

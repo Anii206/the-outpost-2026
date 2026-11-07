@@ -1,15 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { UserProfile, TrackerItem, TrackerStatus, Scholarship } from '../types';
-
-interface MatchResult {
-  score: number;
-  reasons: string[];
-  isEligible: boolean;
-}
+import type { 
+  UserProfile, 
+  TrackerItem, 
+  TrackerStatus, 
+  Scholarship, 
+  MatchResult, 
+  RuleEvaluation 
+} from '../types';
 
 interface AppContextType {
   profile: UserProfile;
   updateProfile: (updated: Partial<UserProfile>) => void;
+  resetProfile: () => void;
   savedIds: string[];
   toggleSave: (scholarshipId: string) => void;
   isSaved: (scholarshipId: string) => boolean;
@@ -18,19 +20,39 @@ interface AppContextType {
   removeFromTracker: (scholarshipId: string) => void;
   getTrackerStatus: (scholarshipId: string) => TrackerStatus | undefined;
   calculateMatch: (scholarship: Scholarship, customProfile?: UserProfile) => MatchResult;
+  checkedDocs: Record<string, string[]>;
+  toggleDocumentCheck: (scholarshipId: string, docName: string) => void;
+  isDocumentChecked: (scholarshipId: string, docName: string) => boolean;
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  name: 'Alex Morgan',
-  email: 'alex.morgan@university.edu',
-  course: 'Computer Science & Data',
+  name: 'Ananya Sharma',
+  email: 'ananya.sharma@college.ac.in',
+  course: 'B.Tech in Computer Engineering',
   level: 'Undergraduate',
-  gpa: 3.75,
-  incomeBracket: '$30,000 - $60,000',
-  category: ['STEM', 'Women in Tech', 'First-Generation'],
-  state: 'California',
-  country: 'United States',
+  percentage: 84,
+  incomeBracket: '₹2,50,000 - ₹6,00,000',
+  category: 'OBC',
+  state: 'Maharashtra',
+  gender: 'Female',
+  isFirstGraduate: true,
+  hasDisability: false,
   isOnboarded: true,
+};
+
+const EMPTY_PROFILE: UserProfile = {
+  name: '',
+  email: '',
+  course: '',
+  level: 'Undergraduate',
+  percentage: 75,
+  incomeBracket: '₹2,50,000 - ₹6,00,000',
+  category: 'General',
+  state: 'All India',
+  gender: 'Female',
+  isFirstGraduate: false,
+  hasDisability: false,
+  isOnboarded: false,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -50,9 +72,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [savedIds, setSavedIds] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('grantly_saved');
-      return stored ? JSON.parse(stored) : ['sch-01', 'sch-05', 'sch-08'];
+      return stored ? JSON.parse(stored) : ['sch-01', 'sch-02', 'sch-05'];
     } catch {
-      return ['sch-01', 'sch-05', 'sch-08'];
+      return ['sch-01', 'sch-02', 'sch-05'];
     }
   });
 
@@ -61,9 +83,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const stored = localStorage.getItem('grantly_tracker');
       return stored ? JSON.parse(stored) : {
-        'sch-01': { scholarshipId: 'sch-01', status: 'applying', updatedAt: new Date().toISOString(), notes: 'Drafting 500-word essay' },
-        'sch-05': { scholarshipId: 'sch-05', status: 'saved', updatedAt: new Date().toISOString() },
-        'sch-08': { scholarshipId: 'sch-08', status: 'submitted', updatedAt: new Date().toISOString(), notes: 'Awaiting technical challenge results' },
+        'sch-01': { scholarshipId: 'sch-01', status: 'applying', updatedAt: new Date().toISOString(), notes: 'Income certificate submitted to college office' },
+        'sch-02': { scholarshipId: 'sch-02', status: 'saved', updatedAt: new Date().toISOString() },
+        'sch-05': { scholarshipId: 'sch-05', status: 'submitted', updatedAt: new Date().toISOString(), notes: 'Awaiting virtual interview notification' },
+      };
+    } catch {
+      return {};
+    }
+  });
+
+  // 4. Checklist documents persisted per scholarship
+  const [checkedDocs, setCheckedDocs] = useState<Record<string, string[]>>(() => {
+    try {
+      const stored = localStorage.getItem('grantly_checked_docs');
+      return stored ? JSON.parse(stored) : {
+        'sch-01': ['Class 10 and 12 Board Marksheets', 'Aadhaar Card linked with Bank Account']
       };
     } catch {
       return {};
@@ -95,8 +129,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [trackerItems]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('grantly_checked_docs', JSON.stringify(checkedDocs));
+    } catch (e) {
+      console.error('Failed to persist checked documents', e);
+    }
+  }, [checkedDocs]);
+
   const updateProfile = (updated: Partial<UserProfile>) => {
     setProfile(prev => ({ ...prev, ...updated, isOnboarded: true }));
+  };
+
+  const resetProfile = () => {
+    setProfile(EMPTY_PROFILE);
+    localStorage.removeItem('grantly_profile');
   };
 
   const toggleSave = (scholarshipId: string) => {
@@ -135,13 +182,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return trackerItems[scholarshipId]?.status;
   };
 
-  // Eligibility matching logic
+  const toggleDocumentCheck = (scholarshipId: string, docName: string) => {
+    setCheckedDocs(prev => {
+      const currentList = prev[scholarshipId] || [];
+      const updatedList = currentList.includes(docName)
+        ? currentList.filter(d => d !== docName)
+        : [...currentList, docName];
+
+      return {
+        ...prev,
+        [scholarshipId]: updatedList
+      };
+    });
+  };
+
+  const isDocumentChecked = (scholarshipId: string, docName: string): boolean => {
+    return (checkedDocs[scholarshipId] || []).includes(docName);
+  };
+
+  // Indian Eligibility & Match Score Engine
   const calculateMatch = (scholarship: Scholarship, customProfile?: UserProfile): MatchResult => {
     const p = customProfile || profile;
+    const rules: RuleEvaluation[] = [];
     const reasons: string[] = [];
-    let score = 50; // base score
+    let score = 40; // Base score
 
-    // 1. Level check
+    // 1. Education Level Rule
     const allowedLevels = scholarship.eligibilityRules.allowedLevels;
     const isLevelMatch = allowedLevels.includes('All Levels') || 
       allowedLevels.includes(p.level) || 
@@ -149,64 +215,221 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       scholarship.level === p.level;
 
     if (isLevelMatch) {
-      score += 20;
-      reasons.push(`Matches your education level (${p.level})`);
+      score += 25;
+      rules.push({
+        id: 'level',
+        label: 'Course / Education Level',
+        requirement: allowedLevels.join(' or '),
+        actual: p.level,
+        status: 'met',
+        reason: `Matches your current stage (${p.level})`,
+      });
+      reasons.push(`Course level matches (${p.level})`);
     } else {
-      score -= 30;
-      reasons.push(`Requires ${allowedLevels.join(', ')} (you are ${p.level})`);
+      score -= 20;
+      rules.push({
+        id: 'level',
+        label: 'Course / Education Level',
+        requirement: allowedLevels.join(' or '),
+        actual: p.level,
+        status: 'not-met',
+        reason: `Requires ${allowedLevels.join(' or ')} (you are in ${p.level})`,
+      });
+      reasons.push(`Level mismatch (Requires ${allowedLevels[0]})`);
     }
 
-    // 2. Category match
-    const matchesCategory = p.category.includes(scholarship.category) ||
-      (scholarship.eligibilityRules.eligibleCategories && scholarship.eligibilityRules.eligibleCategories.some(c => p.category.includes(c)));
-
-    if (matchesCategory) {
-      score += 20;
-      reasons.push(`Aligns with your profile category (${scholarship.category})`);
-    } else {
-      score += 5; // not a hard blocker, but lower alignment
-    }
-
-    // 3. GPA check
-    if (scholarship.eligibilityRules.minGpa) {
-      if (p.gpa >= scholarship.eligibilityRules.minGpa) {
-        score += 15;
-        reasons.push(`Your GPA (${p.gpa}) exceeds the minimum requirement of ${scholarship.eligibilityRules.minGpa}`);
+    // 2. Minimum Percentage Rule
+    if (scholarship.eligibilityRules.minPercentage) {
+      const minP = scholarship.eligibilityRules.minPercentage;
+      if (p.percentage >= minP) {
+        score += 20;
+        rules.push({
+          id: 'percentage',
+          label: 'Academic Percentage',
+          requirement: `Minimum ${minP}% aggregate`,
+          actual: `${p.percentage}%`,
+          status: 'met',
+          reason: `Your score (${p.percentage}%) exceeds the ${minP}% requirement`,
+        });
+        reasons.push(`Academic score (${p.percentage}%) meets threshold`);
       } else {
         score -= 25;
-        reasons.push(`Requires minimum GPA of ${scholarship.eligibilityRules.minGpa} (yours is ${p.gpa})`);
+        rules.push({
+          id: 'percentage',
+          label: 'Academic Percentage',
+          requirement: `Minimum ${minP}% aggregate`,
+          actual: `${p.percentage}%`,
+          status: 'not-met',
+          reason: `Your score (${p.percentage}%) is below the ${minP}% cutoff`,
+        });
+        reasons.push(`Requires ${minP}% marks (you have ${p.percentage}%)`);
       }
     } else {
       score += 10;
+      rules.push({
+        id: 'percentage',
+        label: 'Academic Percentage',
+        requirement: 'No strict percentage cutoff',
+        actual: `${p.percentage}%`,
+        status: 'met',
+        reason: 'Open to all qualifying grade levels',
+      });
     }
 
-    // 4. State targeted
-    if (scholarship.eligibilityRules.targetStates && !scholarship.eligibilityRules.targetStates.includes('All')) {
-      if (scholarship.eligibilityRules.targetStates.includes(p.state)) {
-        score += 10;
-        reasons.push(`Open to students residing in ${p.state}`);
+    // 3. Social Category / Reservation Check
+    if (scholarship.eligibilityRules.eligibleCategories && scholarship.eligibilityRules.eligibleCategories.length > 0) {
+      const allowedCategories = scholarship.eligibilityRules.eligibleCategories;
+      if (allowedCategories.includes(p.category)) {
+        score += 15;
+        rules.push({
+          id: 'category',
+          label: 'Social Category',
+          requirement: allowedCategories.join(', '),
+          actual: p.category,
+          status: 'met',
+          reason: `Your category (${p.category}) is eligible`,
+        });
+        reasons.push(`Category (${p.category}) matches scheme`);
       } else {
-        score -= 15;
-        reasons.push(`Priority given to students in ${scholarship.eligibilityRules.targetStates.join(', ')}`);
+        score -= 30;
+        rules.push({
+          id: 'category',
+          label: 'Social Category',
+          requirement: allowedCategories.join(', '),
+          actual: p.category,
+          status: 'not-met',
+          reason: `Reserved for ${allowedCategories.join(', ')} applicants`,
+        });
+        reasons.push(`Reserved for ${allowedCategories.join('/')}`);
       }
+    } else {
+      score += 10;
+      rules.push({
+        id: 'category',
+        label: 'Social Category',
+        requirement: 'Open to All Categories (General/OBC/SC/ST/EWS)',
+        actual: p.category,
+        status: 'met',
+        reason: 'Open to all student categories',
+      });
     }
 
-    // 5. Income check
+    // 4. Family Income Limit Check
     if (scholarship.eligibilityRules.maxFamilyIncome) {
-      if (p.incomeBracket === '< $30,000' || p.incomeBracket === '$30,000 - $60,000') {
-        score += 10;
-        reasons.push('Meets financial need thresholds');
+      const maxInc = scholarship.eligibilityRules.maxFamilyIncome;
+      // Convert income bracket to rough estimated limit
+      let profileMaxInc = 500000;
+      if (p.incomeBracket === '< ₹2,50,000') profileMaxInc = 250000;
+      else if (p.incomeBracket === '₹2,50,000 - ₹6,00,000') profileMaxInc = 600000;
+      else if (p.incomeBracket === '₹6,00,000 - ₹8,00,000') profileMaxInc = 800000;
+      else profileMaxInc = 1500000;
+
+      if (profileMaxInc <= maxInc) {
+        score += 15;
+        rules.push({
+          id: 'income',
+          label: 'Annual Family Income',
+          requirement: `Under ₹${maxInc.toLocaleString('en-IN')}`,
+          actual: p.incomeBracket,
+          status: 'met',
+          reason: `Your income bracket (${p.incomeBracket}) is within the ₹${maxInc.toLocaleString('en-IN')} ceiling`,
+        });
+        reasons.push('Meets annual income limit criteria');
+      } else {
+        score -= 20;
+        rules.push({
+          id: 'income',
+          label: 'Annual Family Income',
+          requirement: `Under ₹${maxInc.toLocaleString('en-IN')}`,
+          actual: p.incomeBracket,
+          status: 'not-met',
+          reason: `Income bracket (${p.incomeBracket}) may exceed the scheme limit of ₹${maxInc.toLocaleString('en-IN')}`,
+        });
+        reasons.push(`Income limit is ₹${maxInc.toLocaleString('en-IN')}`);
+      }
+    } else {
+      score += 10;
+      rules.push({
+        id: 'income',
+        label: 'Annual Family Income',
+        requirement: 'No maximum family income cap',
+        actual: p.incomeBracket,
+        status: 'met',
+        reason: 'Merit-based with no household income restriction',
+      });
+    }
+
+    // 5. Gender Specific
+    if (scholarship.eligibilityRules.gender && scholarship.eligibilityRules.gender === 'Female') {
+      if (p.gender === 'Female') {
+        score += 15;
+        rules.push({
+          id: 'gender',
+          label: 'Gender Eligibility',
+          requirement: 'Female candidates only',
+          actual: p.gender,
+          status: 'met',
+          reason: 'Meets female scholar requirement',
+        });
+      } else {
+        score -= 40;
+        rules.push({
+          id: 'gender',
+          label: 'Gender Eligibility',
+          requirement: 'Female candidates only',
+          actual: p.gender,
+          status: 'not-met',
+          reason: 'This scholarship is exclusively for female students',
+        });
+        reasons.push('Exclusively for girl students');
       }
     }
 
-    // Clamp score
+    // 6. State / Domicile Check
+    if (scholarship.eligibilityRules.targetStates && !scholarship.eligibilityRules.targetStates.includes('All India')) {
+      const allowedStates = scholarship.eligibilityRules.targetStates;
+      if (allowedStates.includes(p.state) || p.state === 'All India') {
+        score += 10;
+        rules.push({
+          id: 'domicile',
+          label: 'State of Domicile',
+          requirement: allowedStates.join(', '),
+          actual: p.state,
+          status: 'met',
+          reason: `Your domicile state (${p.state}) matches this regional scheme`,
+        });
+      } else {
+        score -= 25;
+        rules.push({
+          id: 'domicile',
+          label: 'State of Domicile',
+          requirement: allowedStates.join(', '),
+          actual: p.state,
+          status: 'not-met',
+          reason: `Restricted to residents of ${allowedStates.join(', ')} (your state is ${p.state})`,
+        });
+        reasons.push(`Specific to ${allowedStates.join('/')}`);
+      }
+    } else {
+      rules.push({
+        id: 'domicile',
+        label: 'State of Domicile',
+        requirement: 'All India (Any State / UT)',
+        actual: p.state,
+        status: 'met',
+        reason: 'Open to candidates from all Indian States & Union Territories',
+      });
+    }
+
     const clampedScore = Math.max(15, Math.min(99, score));
-    const isEligible = clampedScore >= 65;
+    const allMet = rules.every(r => r.status === 'met');
+    const isEligible = clampedScore >= 65 && allMet;
 
     return {
       score: clampedScore,
-      reasons,
       isEligible,
+      rules,
+      reasons,
     };
   };
 
@@ -215,6 +438,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         profile,
         updateProfile,
+        resetProfile,
         savedIds,
         toggleSave,
         isSaved,
@@ -223,6 +447,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeFromTracker,
         getTrackerStatus,
         calculateMatch,
+        checkedDocs,
+        toggleDocumentCheck,
+        isDocumentChecked,
       }}
     >
       {children}

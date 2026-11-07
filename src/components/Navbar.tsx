@@ -109,11 +109,11 @@ export const Navbar: React.FC = () => {
               className="flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full border border-stone-200 bg-white hover:bg-stone-50 transition-colors"
             >
               <div className="w-7 h-7 rounded-full bg-emerald-100 text-[#133E2B] flex items-center justify-center text-xs font-bold">
-                {profile.name ? profile.name.charAt(0) : 'U'}
+                {profile.name?.trim() ? profile.name.charAt(0) : 'P'}
               </div>
               <div className="text-left">
-                <p className="text-xs font-bold text-stone-800 leading-none">{profile.name.split(' ')[0]}</p>
-                <p className="text-[10px] text-emerald-800 font-medium leading-tight">Match Active</p>
+                <p className="text-xs font-bold text-stone-800 leading-none">{profile.name?.trim() ? profile.name.split(' ')[0] : 'Profile'}</p>
+                <p className="text-[10px] text-emerald-800 font-medium leading-tight">{profile.isOnboarded ? 'Match Active' : 'Set Up'}</p>
               </div>
             </Link>
           </div>
@@ -168,11 +168,11 @@ export const Navbar: React.FC = () => {
               className="flex items-center gap-2 text-stone-800 font-medium"
             >
               <div className="w-8 h-8 rounded-full bg-emerald-100 text-[#133E2B] flex items-center justify-center font-bold">
-                {profile.name.charAt(0)}
+                {profile.name?.trim() ? profile.name.charAt(0) : 'P'}
               </div>
               <div>
-                <p className="text-sm font-bold text-stone-900">{profile.name}</p>
-                <p className="text-xs text-stone-500">{profile.level} • {profile.course}</p>
+                <p className="text-sm font-bold text-stone-900">{profile.name?.trim() || 'My Profile'}</p>
+                <p className="text-xs text-stone-500">{profile.isOnboarded ? `${profile.level} • ${profile.course}` : 'Set up your student profile'}</p>
               </div>
             </Link>
             <div className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900">
