@@ -62,12 +62,12 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
       whileHover={{ y: -4 }}
-      className={`relative flex flex-col justify-between bg-white rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md ${
+      className={`relative flex flex-col justify-between bg-surface rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md ${
         compared 
-          ? 'border-emerald-600 ring-2 ring-emerald-600/20' 
+          ? 'border-primary ring-2 ring-primary/20' 
           : scholarship.featured 
-          ? 'border-emerald-700/30 ring-1 ring-emerald-700/10' 
-          : 'border-stone-200/90 hover:border-stone-300'
+          ? 'border-primary/40 ring-1 ring-primary/20' 
+          : 'border-border hover:border-primary/40'
       } p-5 sm:p-6`}
       aria-labelledby={`scholarship-title-${scholarship.id}`}
     >
@@ -80,10 +80,10 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
             <div
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide ${
                 matchResult.score >= 80
-                  ? 'bg-emerald-50 text-[#133E2B] border border-emerald-200/70'
+                  ? 'bg-primary/10 text-primary border border-primary/20'
                   : matchResult.score >= 60
-                  ? 'bg-amber-50 text-amber-900 border border-amber-200/70'
-                  : 'bg-stone-100 text-stone-700 border border-stone-200'
+                  ? 'bg-accent/15 text-accent border border-accent/30'
+                  : 'bg-surface-2 text-muted border border-border'
               }`}
               title={matchResult.reasons.join('\n')}
             >
@@ -93,15 +93,15 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
 
             {/* Featured Badge */}
             {scholarship.featured && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#133E2B] text-white">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary text-primary-contrast">
                 Featured
               </span>
             )}
 
             {/* Active Tracker Stage Pill */}
             {currentTrackerStatus && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-stone-100 text-stone-800 capitalize border border-stone-200">
-                <KanbanSquare className="w-3 h-3 text-[#133E2B]" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-surface-2 text-text capitalize border border-border">
+                <KanbanSquare className="w-3 h-3 text-primary" />
                 {currentTrackerStatus}
               </span>
             )}
@@ -112,10 +112,10 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
             <button
               type="button"
               onClick={handleCompareClick}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-all ${
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-all min-h-[36px] ${
                 compared 
-                  ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
-                  : 'bg-stone-50 hover:bg-stone-100 text-stone-600 border-stone-200'
+                  ? 'bg-primary/15 text-primary border-primary'
+                  : 'bg-surface-2 hover:border-primary/40 text-text border-border'
               }`}
               title={compared ? 'Remove from compare' : 'Compare scholarship (up to 3)'}
               aria-label={compared ? `Remove ${scholarship.name} from comparison` : `Add ${scholarship.name} to comparison`}
@@ -131,28 +131,28 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
                 e.preventDefault();
                 toggleSave(scholarship.id);
               }}
-              className={`p-2 rounded-xl transition-colors ${
+              className={`p-2 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                 saved
-                  ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                  : 'text-stone-400 hover:text-stone-600 hover:bg-stone-100'
+                  ? 'bg-accent/15 text-accent hover:bg-accent/25'
+                  : 'text-muted hover:text-text hover:bg-surface-2'
               }`}
               aria-label={saved ? `Remove ${scholarship.name} from saved` : `Save ${scholarship.name}`}
               title={saved ? 'Remove from saved' : 'Save scholarship'}
             >
-              <Bookmark className={`w-4 h-4 ${saved ? 'fill-amber-500 text-amber-600' : ''}`} />
+              <Bookmark className={`w-4 h-4 ${saved ? 'fill-accent text-accent' : ''}`} />
             </button>
           </div>
         </div>
 
         {/* Provider */}
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1 line-clamp-1">
+        <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-1 line-clamp-1">
           {scholarship.provider}
         </p>
 
         {/* Title */}
         <h3 
           id={`scholarship-title-${scholarship.id}`}
-          className="text-base sm:text-lg font-bold text-stone-900 leading-snug group hover:text-[#133E2B] transition-colors mb-2"
+          className="text-base sm:text-lg font-bold text-text leading-snug group hover:text-primary transition-colors mb-2"
         >
           <Link to={`/scholarship/${scholarship.id}`} className="focus:outline-none focus:underline">
             {scholarship.name}
@@ -160,21 +160,21 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
         </h3>
 
         {/* Description snippet */}
-        <p className="text-xs sm:text-sm text-stone-600 line-clamp-2 leading-relaxed mb-4">
+        <p className="text-xs sm:text-sm text-muted line-clamp-2 leading-relaxed mb-4">
           {scholarship.description}
         </p>
 
         {/* Tags */}
-        <div className="flex flex-wrap items-center gap-1.5 mb-5 text-xs text-stone-600">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 font-medium">
-            <GraduationCap className="w-3 h-3 text-stone-500" />
+        <div className="flex flex-wrap items-center gap-1.5 mb-5 text-xs text-muted">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-2 text-text border border-border/50 font-medium">
+            <GraduationCap className="w-3 h-3 text-muted" />
             {scholarship.level}
           </span>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-stone-100 font-medium">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-surface-2 text-text border border-border/50 font-medium">
             {scholarship.category}
           </span>
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 font-medium">
-            <MapPin className="w-3 h-3 text-stone-500" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-2 text-text border border-border/50 font-medium">
+            <MapPin className="w-3 h-3 text-muted" />
             {scholarship.eligibilityRules.targetStates?.[0] || scholarship.country}
           </span>
         </div>
@@ -182,23 +182,23 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
 
       <div>
         {/* Award Amount & Deadline */}
-        <div className="pt-4 border-t border-stone-100 flex items-end justify-between gap-3 mb-4">
+        <div className="pt-4 border-t border-border flex items-end justify-between gap-3 mb-4">
           <div>
-            <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider block">Award Amount</span>
-            <div className="text-lg sm:text-xl font-extrabold text-[#133E2B] flex items-center">
+            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block">Award Amount</span>
+            <div className="text-lg sm:text-xl font-extrabold text-primary flex items-center">
               <span>{scholarship.amountFormatted}</span>
             </div>
           </div>
 
           <div className="text-right">
-            <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider block">Deadline</span>
+            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block">Deadline</span>
             <div
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ${
                 deadlineInfo.isCritical
-                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                  ? 'bg-danger/10 text-danger border border-danger/30'
                   : deadlineInfo.isUrgent
-                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                  : 'bg-stone-100 text-stone-700'
+                  ? 'bg-accent/15 text-accent border border-accent/30'
+                  : 'bg-surface-2 text-muted border border-border'
               }`}
               title={`Due on ${formatReadableDate(scholarship.deadline)}`}
             >
@@ -212,7 +212,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
         <div className="flex items-center gap-2 pt-1 relative">
           <Link
             to={`/scholarship/${scholarship.id}`}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#133E2B] hover:bg-[#1B533A] text-white text-xs sm:text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#133E2B] focus:ring-offset-2"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-contrast text-xs sm:text-sm font-semibold transition-opacity hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
           >
             <span>View Details</span>
             <ChevronRight className="w-4 h-4" />
@@ -223,7 +223,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
             <button
               type="button"
               onClick={() => setShowStatusMenu(!showStatusMenu)}
-              className="p-2.5 rounded-xl border border-stone-200 hover:border-stone-300 bg-white hover:bg-stone-50 text-stone-700 transition-colors focus:outline-none focus:ring-2 focus:ring-[#133E2B]"
+              className="p-2.5 rounded-xl border border-border bg-surface hover:bg-surface-2 text-text transition-colors focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Manage tracker status"
               title="Set application stage"
             >
@@ -236,8 +236,8 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
                   className="fixed inset-0 z-20" 
                   onClick={() => setShowStatusMenu(false)} 
                 />
-                <div className="absolute right-0 bottom-full mb-2 z-30 w-44 bg-white rounded-xl shadow-lg border border-stone-200 py-1 text-xs">
-                  <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-stone-400 border-b border-stone-100">
+                <div className="absolute right-0 bottom-full mb-2 z-30 w-44 bg-surface rounded-xl shadow-lg border border-border py-1 text-xs">
+                  <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-muted border-b border-border">
                     Set Application Stage
                   </div>
                   {trackerStatusOptions.map(opt => (
@@ -248,11 +248,11 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
                         setTrackerStatus(scholarship.id, opt.status);
                         setShowStatusMenu(false);
                       }}
-                      className="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-stone-50 text-stone-700 transition-colors"
+                      className="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-surface-2 text-text transition-colors"
                     >
                       <span>{opt.label}</span>
                       {currentTrackerStatus === opt.status && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#133E2B]" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                       )}
                     </button>
                   ))}

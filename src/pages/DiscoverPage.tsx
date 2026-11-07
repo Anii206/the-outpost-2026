@@ -7,21 +7,25 @@ import {
   ArrowUpDown, 
   Sparkles, 
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from 'lucide-react';
-import { SCHOLARSHIPS } from '../data/scholarships';
-import type { FilterState } from '../types';
+import { getScholarships } from '../services/api';
+import type { FilterState, Scholarship, ScholarshipCategory } from '../types';
 import { useApp } from '../context/AppContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { ScholarshipCard } from '../components/ScholarshipCard';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { SkeletonCard } from '../components/SkeletonCard';
 import { EmptyState } from '../components/EmptyState';
 import { CompareFloatingBar } from '../components/CompareFloatingBar';
-import { getDaysRemaining } from '../utils/dateUtils';
+import { EligibilityFinderModal } from '../components/EligibilityFinderModal';
 
 export const DiscoverPage: React.FC = () => {
   const { isSaved, calculateMatch, profile } = useApp();
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  usePageTitle('Discover Scholarships');
 
   // Filter & Search states
   const [filters, setFilters] = useState<FilterState>({
@@ -35,10 +39,34 @@ export const DiscoverPage: React.FC = () => {
     sortBy: 'match-desc',
   });
 
+  const [scholarshipsList, setScholarshipsList] = useState<Scholarship[]>([]);
   const [onlySaved, setOnlySaved] = useState(false);
   const [onlyHighMatch, setOnlyHighMatch] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const [isLoading] = useState(false);
+  const [isFinderOpen, setIsFinderOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch scholarships through promise-based API with loading skeleton
+  useEffect(() => {
+    let isMounted = true;
+    Promise.resolve().then(() => {
+      if (isMounted) setIsLoading(true);
+    });
+
+    getScholarships(filters)
+      .then((data) => {
+        if (isMounted) {
+          setScholarshipsList(data);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [filters]);
 
   // Quick search shortcut: '/' focuses search input
   useEffect(() => {
@@ -71,97 +99,28 @@ export const DiscoverPage: React.FC = () => {
     setOnlyHighMatch(false);
   };
 
-  // Filter & Sort computation
+  // Filter & Sort computation on client for saved and match status
   const filteredScholarships = useMemo(() => {
-    return SCHOLARSHIPS.filter((item) => {
-      // 1. Search Query
-      if (filters.search.trim()) {
-        const query = filters.search.toLowerCase();
-        const matchesName = item.name.toLowerCase().includes(query);
-        const matchesProvider = item.provider.toLowerCase().includes(query);
-        const matchesDesc = item.description.toLowerCase().includes(query);
-        const matchesTags = item.tags.some(t => t.toLowerCase().includes(query));
-        const matchesCategory = item.category.toLowerCase().includes(query);
-
-        if (!matchesName && !matchesProvider && !matchesDesc && !matchesTags && !matchesCategory) {
-          return false;
-        }
-      }
-
-      // 2. Academic Level
-      if (filters.level !== 'All Levels') {
-        const allowed = item.eligibilityRules.allowedLevels;
-        const matchesLevel = item.level === 'All Levels' || 
-          item.level === filters.level || 
-          allowed.includes('All Levels') || 
-          allowed.includes(filters.level);
-        if (!matchesLevel) return false;
-      }
-
-      // 3. Category
-      if (filters.category !== 'All Categories') {
-        if (item.category !== filters.category) return false;
-      }
-
-      // 4. State / Domicile
-      if (filters.state !== 'All India') {
-        const targetStates = item.eligibilityRules.targetStates || ['All India'];
-        if (!targetStates.includes('All India') && !targetStates.includes(filters.state)) {
-          return false;
-        }
-      }
-
-      // 5. Minimum Amount in INR
-      if (filters.minAmount > 0 && item.amount < filters.minAmount) {
-        return false;
-      }
-
-      // 6. Deadline Range
-      if (filters.deadlineRange !== 'all') {
-        const days = getDaysRemaining(item.deadline);
-        if (days < 0) return false; // expired
-        if (filters.deadlineRange === '30-days' && days > 30) return false;
-        if (filters.deadlineRange === '60-days' && days > 60) return false;
-        if (filters.deadlineRange === '90-days' && days > 90) return false;
-      }
-
-      // 7. Only Saved
+    return scholarshipsList.filter((item) => {
       if (onlySaved && !isSaved(item.id)) {
         return false;
       }
-
-      // 8. Only High Match
       if (onlyHighMatch) {
         const match = calculateMatch(item);
         if (match.score < 75) return false;
       }
-
       return true;
     }).sort((a, b) => {
-      // Sorting
       if (filters.sortBy === 'match-desc') {
         const matchA = calculateMatch(a).score;
         const matchB = calculateMatch(b).score;
         return matchB - matchA;
       }
-      if (filters.sortBy === 'deadline-asc') {
-        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-      }
-      if (filters.sortBy === 'amount-desc') {
-        return b.amount - a.amount;
-      }
-      if (filters.sortBy === 'amount-asc') {
-        return a.amount - b.amount;
-      }
-      if (filters.sortBy === 'name-asc') {
-        return a.name.localeCompare(b.name);
-      }
       return 0;
     });
-  }, [filters, onlySaved, onlyHighMatch, isSaved, calculateMatch]);
+  }, [scholarshipsList, onlySaved, onlyHighMatch, isSaved, calculateMatch, filters.sortBy]);
 
-  // Quick category pills on Hero
-  const popularTags = [
+  const popularTags: { label: string; category: ScholarshipCategory }[] = [
     { label: 'All', category: 'All Categories' },
     { label: 'Girls in STEM', category: 'Girls in STEM' },
     { label: 'Corporate CSR', category: 'Corporate CSR' },
@@ -171,21 +130,21 @@ export const DiscoverPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-16">
+    <div className="min-h-screen pb-20">
       
       {/* PROMPT BANNER: If profile is not fully onboarded */}
       {!profile.isOnboarded && (
-        <aside aria-label="Profile setup alert" className="bg-amber-50 border-b border-amber-200 px-4 py-3">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-amber-900">
+        <aside aria-label="Profile setup alert" className="bg-accent/10 border-b border-accent/25 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-text">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-accent shrink-0" />
               <span>
-                <strong>Set up your profile in 60 seconds</strong> to calculate precise eligibility for state schemes, reservation benefits, and income ceilings.
+                <strong>Set up your student profile in 60 seconds</strong> to calculate precise eligibility for state schemes, reservation benefits, and income ceilings.
               </span>
             </div>
             <Link
               to="/profile"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 transition-colors shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-accent text-white font-bold text-xs shrink-0 transition-opacity hover:opacity-90 shadow-2xs min-h-[36px]"
             >
               <span>Complete Profile</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -195,18 +154,18 @@ export const DiscoverPage: React.FC = () => {
       )}
 
       {/* HERO SECTION */}
-      <section className="relative overflow-hidden pt-10 pb-16 sm:pb-20 border-b border-stone-200/80 bg-gradient-to-b from-[#F3EEE5]/80 via-[#FAF8F5] to-[#FAF8F5]">
+      <section className="relative overflow-hidden pt-10 pb-16 sm:pb-20 border-b border-border bg-gradient-to-b from-surface-2/60 via-bg to-bg transition-colors">
         
-        {/* Subtle decorative circles */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
-        <div className="absolute -bottom-10 left-1/3 w-80 h-80 bg-amber-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        {/* Decorative blur rings */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="absolute -bottom-10 left-1/3 w-80 h-80 bg-accent/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="max-w-3xl mx-auto text-center space-y-4">
+          <div className="max-w-3xl mx-auto text-center space-y-5">
             
             {/* Tagline Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/80 border border-emerald-200 text-[#133E2B] text-xs font-bold tracking-wide">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-wide">
               <Sparkles className="w-3.5 h-3.5" />
               <span>
                 {profile.isOnboarded 
@@ -216,40 +175,54 @@ export const DiscoverPage: React.FC = () => {
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl font-extrabold text-[#133E2B] tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-extrabold text-primary tracking-tight leading-tight">
               Find Scholarships Built for Indian Students
             </h1>
 
             {/* Subtitle */}
-            <p className="text-sm sm:text-base text-stone-600 leading-relaxed font-normal max-w-2xl mx-auto">
-              Explore 24 verified government and corporate schemes offering over ₹4.8 Crores in educational aid. Instant eligibility check for General, OBC, SC, ST & EWS categories.
+            <p className="text-sm sm:text-base text-muted leading-relaxed font-normal max-w-2xl mx-auto">
+              Explore verified government and corporate schemes offering over ₹4.8 Crores in educational aid. Instant eligibility check for General, OBC, SC, ST & EWS categories.
             </p>
 
-            {/* Main Search Input */}
-            <div className="pt-4 max-w-2xl mx-auto">
-              <div className="relative flex items-center shadow-md rounded-2xl bg-white border border-stone-300 focus-within:border-[#133E2B] focus-within:ring-2 focus-within:ring-[#133E2B]/20 transition-all">
-                <Search className="w-5 h-5 text-stone-400 ml-4 shrink-0" />
+            {/* HERO CTA BUTTON: 60-Second Eligibility Finder */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsFinderOpen(true)}
+                className="group inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-primary text-primary-contrast font-extrabold text-sm shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-primary min-h-[48px]"
+                aria-haspopup="dialog"
+              >
+                <Zap className="w-4 h-4 text-accent group-hover:rotate-12 transition-transform" />
+                <span>Find my scholarships in 60 seconds</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Main Search Bar */}
+            <div className="pt-3 max-w-2xl mx-auto">
+              <div className="relative flex items-center shadow-xs rounded-2xl bg-surface border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                <Search className="w-5 h-5 text-muted ml-4 shrink-0" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange({ search: e.target.value })}
                   placeholder="Search NSP, AICTE, Reliance, Tata, State schemes, course..."
-                  className="w-full py-4 px-3 text-stone-900 placeholder:text-stone-400 bg-transparent text-sm sm:text-base focus:outline-none"
+                  className="w-full py-4 px-3 text-text placeholder:text-muted bg-transparent text-sm sm:text-base focus:outline-none"
                   aria-label="Search scholarships"
                 />
                 {filters.search && (
                   <button
                     type="button"
                     onClick={() => handleFilterChange({ search: '' })}
-                    className="p-1.5 mr-2 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+                    className="p-1.5 mr-2 rounded-lg text-muted hover:text-text hover:bg-surface-2 min-h-[36px] min-w-[36px] flex items-center justify-center"
                     aria-label="Clear search text"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
                 <div className="hidden sm:flex items-center pr-3 pointer-events-none">
-                  <kbd className="px-2 py-1 rounded bg-stone-100 border border-stone-200 text-stone-500 text-xs font-mono">
+                  <kbd className="px-2 py-1 rounded bg-surface-2 border border-border text-muted text-xs font-mono">
                     /
                   </kbd>
                 </div>
@@ -257,17 +230,17 @@ export const DiscoverPage: React.FC = () => {
             </div>
 
             {/* Category Quick Pills */}
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
-              <span className="text-xs font-semibold text-stone-500 mr-1">Popular:</span>
+            <div className="pt-1 flex flex-wrap items-center justify-center gap-2">
+              <span className="text-xs font-semibold text-muted mr-1">Popular:</span>
               {popularTags.map((tag) => (
                 <button
                   key={tag.label}
                   type="button"
-                  onClick={() => handleFilterChange({ category: tag.category as any })}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  onClick={() => handleFilterChange({ category: tag.category })}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all min-h-[36px] ${
                     filters.category === tag.category
-                      ? 'bg-[#133E2B] text-white shadow-xs'
-                      : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
+                      ? 'bg-primary text-primary-contrast shadow-xs'
+                      : 'bg-surface border border-border text-text hover:bg-surface-2'
                   }`}
                 >
                   {tag.label}
@@ -277,23 +250,23 @@ export const DiscoverPage: React.FC = () => {
 
           </div>
 
-          {/* Metrics Bar with INR formatting */}
+          {/* Metrics Summary Bar */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-stone-200/80 p-4 text-center">
-              <span className="text-2xl sm:text-3xl font-extrabold text-[#133E2B]">24</span>
-              <p className="text-xs font-medium text-stone-600 mt-0.5">Verified Indian Schemes</p>
+            <div className="bg-surface rounded-2xl border border-border p-4 text-center shadow-xs">
+              <span className="text-2xl sm:text-3xl font-extrabold text-primary">24</span>
+              <p className="text-xs font-medium text-muted mt-0.5">Verified Indian Schemes</p>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-stone-200/80 p-4 text-center">
-              <span className="text-2xl sm:text-3xl font-extrabold text-[#133E2B]">₹4.8 Cr+</span>
-              <p className="text-xs font-medium text-stone-600 mt-0.5">Total Available Aid</p>
+            <div className="bg-surface rounded-2xl border border-border p-4 text-center shadow-xs">
+              <span className="text-2xl sm:text-3xl font-extrabold text-primary">₹4.8 Cr+</span>
+              <p className="text-xs font-medium text-muted mt-0.5">Total Available Aid</p>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-stone-200/80 p-4 text-center">
-              <span className="text-2xl sm:text-3xl font-extrabold text-amber-600">8</span>
-              <p className="text-xs font-medium text-stone-600 mt-0.5">Closing In 14 Days</p>
+            <div className="bg-surface rounded-2xl border border-border p-4 text-center shadow-xs">
+              <span className="text-2xl sm:text-3xl font-extrabold text-accent">8</span>
+              <p className="text-xs font-medium text-muted mt-0.5">Closing In 14 Days</p>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-stone-200/80 p-4 text-center">
-              <span className="text-2xl sm:text-3xl font-extrabold text-emerald-800">100%</span>
-              <p className="text-xs font-medium text-stone-600 mt-0.5">Free & Verified Portals</p>
+            <div className="bg-surface rounded-2xl border border-border p-4 text-center shadow-xs">
+              <span className="text-2xl sm:text-3xl font-extrabold text-success">100%</span>
+              <p className="text-xs font-medium text-muted mt-0.5">Free & Verified Portals</p>
             </div>
           </div>
 
@@ -301,19 +274,22 @@ export const DiscoverPage: React.FC = () => {
       </section>
 
       {/* MAIN CONTENT AREA */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
         {/* Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200/70">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
           
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-text flex items-center gap-2">
               <span>All Opportunities</span>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-stone-200 text-stone-800">
+              <span 
+                className="text-xs font-bold px-2 py-0.5 rounded-full bg-surface-2 text-text border border-border"
+                aria-live="polite"
+              >
                 {filteredScholarships.length}
               </span>
             </h2>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-muted">
               Sorted by best eligibility match for your current academic profile.
             </p>
           </div>
@@ -324,32 +300,32 @@ export const DiscoverPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-              className="lg:hidden flex items-center gap-2 px-3.5 py-2 rounded-xl border border-stone-300 bg-white text-stone-800 text-xs font-semibold shadow-xs"
+              className="lg:hidden flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border bg-surface text-text text-xs font-semibold shadow-xs min-h-[44px]"
             >
-              <SlidersHorizontal className="w-4 h-4 text-[#133E2B]" />
+              <SlidersHorizontal className="w-4 h-4 text-primary" />
               <span>Filters</span>
               {(filters.level !== 'All Levels' || filters.category !== 'All Categories' || filters.minAmount > 0 || filters.state !== 'All India' || onlySaved || onlyHighMatch) && (
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span className="w-2 h-2 rounded-full bg-accent" />
               )}
             </button>
 
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-2 bg-white border border-stone-200/90 rounded-xl px-3 py-2 shadow-xs">
-              <ArrowUpDown className="w-4 h-4 text-stone-500 shrink-0" />
-              <label htmlFor="sort-select" className="text-xs font-medium text-stone-600 shrink-0">
+            {/* Sort Select */}
+            <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-2 shadow-xs min-h-[44px]">
+              <ArrowUpDown className="w-4 h-4 text-muted shrink-0" />
+              <label htmlFor="sort-select" className="text-xs font-medium text-muted shrink-0">
                 Sort:
               </label>
               <select
                 id="sort-select"
                 value={filters.sortBy}
-                onChange={(e) => handleFilterChange({ sortBy: e.target.value as any })}
-                className="text-xs font-semibold text-stone-800 bg-transparent focus:outline-none cursor-pointer"
+                onChange={(e) => handleFilterChange({ sortBy: e.target.value as FilterState['sortBy'] })}
+                className="text-xs font-semibold text-text bg-transparent focus:outline-none cursor-pointer"
               >
-                <option value="match-desc">Highest Match (%)</option>
-                <option value="deadline-asc">Deadline (Soonest)</option>
-                <option value="amount-desc">Amount (Highest)</option>
-                <option value="amount-asc">Amount (Lowest)</option>
-                <option value="name-asc">Name (A-Z)</option>
+                <option value="match-desc" className="bg-surface text-text">Highest Match (%)</option>
+                <option value="deadline-asc" className="bg-surface text-text">Deadline (Soonest)</option>
+                <option value="amount-desc" className="bg-surface text-text">Amount (Highest)</option>
+                <option value="amount-asc" className="bg-surface text-text">Amount (Lowest)</option>
+                <option value="name-asc" className="bg-surface text-text">Name (A-Z)</option>
               </select>
             </div>
 
@@ -365,68 +341,68 @@ export const DiscoverPage: React.FC = () => {
           onlySaved || 
           onlyHighMatch || 
           filters.search) && (
-          <div className="flex flex-wrap items-center gap-2 pt-4 pb-2">
-            <span className="text-xs text-stone-500 font-medium">Active filters:</span>
+          <div className="flex flex-wrap items-center gap-2 pt-4 pb-2" aria-label="Active filters">
+            <span className="text-xs text-muted font-medium">Active filters:</span>
             
             {filters.search && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-surface-2 text-text border border-border">
                 "{filters.search}"
                 <button type="button" onClick={() => handleFilterChange({ search: '' })} aria-label="Remove search filter">
-                  <X className="w-3 h-3 hover:text-stone-900" />
+                  <X className="w-3 h-3 hover:text-primary" />
                 </button>
               </span>
             )}
 
             {filters.level !== 'All Levels' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-surface-2 text-text border border-border">
                 Level: {filters.level}
                 <button type="button" onClick={() => handleFilterChange({ level: 'All Levels' })} aria-label="Remove level filter">
-                  <X className="w-3 h-3 hover:text-stone-900" />
+                  <X className="w-3 h-3 hover:text-primary" />
                 </button>
               </span>
             )}
 
             {filters.category !== 'All Categories' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-surface-2 text-text border border-border">
                 Type: {filters.category}
                 <button type="button" onClick={() => handleFilterChange({ category: 'All Categories' })} aria-label="Remove category filter">
-                  <X className="w-3 h-3 hover:text-stone-900" />
+                  <X className="w-3 h-3 hover:text-primary" />
                 </button>
               </span>
             )}
 
             {filters.state !== 'All India' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-surface-2 text-text border border-border">
                 State: {filters.state}
                 <button type="button" onClick={() => handleFilterChange({ state: 'All India' })} aria-label="Remove state filter">
-                  <X className="w-3 h-3 hover:text-stone-900" />
+                  <X className="w-3 h-3 hover:text-primary" />
                 </button>
               </span>
             )}
 
             {filters.minAmount > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-stone-200/80 text-stone-800">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-surface-2 text-text border border-border">
                 Min: ₹{(filters.minAmount / 1000).toLocaleString('en-IN')}k
                 <button type="button" onClick={() => handleFilterChange({ minAmount: 0 })} aria-label="Remove min amount filter">
-                  <X className="w-3 h-3 hover:text-stone-900" />
+                  <X className="w-3 h-3 hover:text-primary" />
                 </button>
               </span>
             )}
 
             {onlyHighMatch && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-emerald-100 text-emerald-900 font-semibold">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-primary/15 text-primary border border-primary/20 font-semibold">
                 Match &gt; 75%
                 <button type="button" onClick={() => setOnlyHighMatch(false)} aria-label="Remove high match filter">
-                  <X className="w-3 h-3 hover:text-emerald-950" />
+                  <X className="w-3 h-3 hover:opacity-75" />
                 </button>
               </span>
             )}
 
             {onlySaved && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-amber-100 text-amber-900 font-semibold">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-accent/15 text-accent border border-accent/20 font-semibold">
                 Saved Only
                 <button type="button" onClick={() => setOnlySaved(false)} aria-label="Remove saved only filter">
-                  <X className="w-3 h-3 hover:text-amber-950" />
+                  <X className="w-3 h-3 hover:opacity-75" />
                 </button>
               </span>
             )}
@@ -434,7 +410,7 @@ export const DiscoverPage: React.FC = () => {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-semibold text-rose-700 hover:text-rose-900 hover:underline ml-1"
+              className="text-xs font-semibold text-danger hover:underline ml-1 min-h-[36px] flex items-center"
             >
               Clear all
             </button>
@@ -450,7 +426,7 @@ export const DiscoverPage: React.FC = () => {
               filters={filters}
               onChange={handleFilterChange}
               onReset={handleResetFilters}
-              totalCount={SCHOLARSHIPS.length}
+              totalCount={scholarshipsList.length}
               filteredCount={filteredScholarships.length}
               onlySaved={onlySaved}
               onToggleOnlySaved={() => setOnlySaved(!onlySaved)}
@@ -461,18 +437,18 @@ export const DiscoverPage: React.FC = () => {
 
           {/* Mobile Filter Modal */}
           {mobileFilterOpen && (
-            <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
+            <div className="fixed inset-0 z-50 lg:hidden flex justify-end" role="dialog" aria-modal="true">
               <div 
-                className="fixed inset-0 bg-stone-900/40 backdrop-blur-xs" 
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs" 
                 onClick={() => setMobileFilterOpen(false)} 
               />
-              <div className="relative w-full max-w-xs h-full bg-[#FAF8F5] overflow-y-auto p-5 shadow-2xl z-10">
-                <div className="flex items-center justify-between pb-4 mb-4 border-b border-stone-200">
-                  <h3 className="font-bold text-stone-900">Filters</h3>
+              <div className="relative w-full max-w-xs h-full bg-surface text-text overflow-y-auto p-5 shadow-2xl z-10 border-l border-border">
+                <div className="flex items-center justify-between pb-4 mb-4 border-b border-border">
+                  <h3 className="font-bold text-text">Filters</h3>
                   <button
                     type="button"
                     onClick={() => setMobileFilterOpen(false)}
-                    className="p-1 rounded-lg text-stone-500 hover:bg-stone-200"
+                    className="p-1 rounded-lg text-muted hover:bg-surface-2"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -481,7 +457,7 @@ export const DiscoverPage: React.FC = () => {
                   filters={filters}
                   onChange={handleFilterChange}
                   onReset={handleResetFilters}
-                  totalCount={SCHOLARSHIPS.length}
+                  totalCount={scholarshipsList.length}
                   filteredCount={filteredScholarships.length}
                   onlySaved={onlySaved}
                   onToggleOnlySaved={() => setOnlySaved(!onlySaved)}
@@ -491,7 +467,7 @@ export const DiscoverPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setMobileFilterOpen(false)}
-                  className="w-full mt-6 py-3 rounded-xl bg-[#133E2B] text-white font-semibold text-sm"
+                  className="w-full mt-6 py-3 rounded-xl bg-primary text-primary-contrast font-semibold text-sm min-h-[44px]"
                 >
                   Apply & Close ({filteredScholarships.length} found)
                 </button>
@@ -524,6 +500,15 @@ export const DiscoverPage: React.FC = () => {
 
       {/* Floating Compare Action Bar */}
       <CompareFloatingBar />
+
+      {/* 60-Second Eligibility Finder Modal */}
+      <EligibilityFinderModal
+        isOpen={isFinderOpen}
+        onClose={() => setIsFinderOpen(false)}
+        onApplyResults={() => {
+          handleFilterChange({ sortBy: 'match-desc' });
+        }}
+      />
 
     </div>
   );

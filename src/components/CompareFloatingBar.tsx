@@ -16,25 +16,25 @@ export const CompareFloatingBar: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4 animate-in slide-in-from-bottom duration-300">
-      <div className="bg-[#133E2B] text-white rounded-2xl shadow-2xl p-3 sm:p-4 border border-emerald-700/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-surface text-text rounded-2xl shadow-2xl p-3 sm:p-4 border border-border flex flex-col sm:flex-row items-center justify-between gap-3">
         
         {/* Left items chips */}
         <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
-          <div className="w-8 h-8 rounded-xl bg-emerald-800 flex items-center justify-center shrink-0">
-            <Columns className="w-4 h-4 text-emerald-200" />
+          <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+            <Columns className="w-4 h-4" />
           </div>
           
           <div className="flex items-center gap-1.5 overflow-x-auto">
             {selectedScholarships.map(sch => sch && (
               <span 
                 key={sch.id}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-900/80 border border-emerald-700 text-xs text-emerald-100 max-w-[150px] truncate"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-xs text-text max-w-[150px] truncate"
               >
                 <span className="truncate">{sch.name}</span>
                 <button
                   type="button"
                   onClick={() => toggleCompare(sch.id)}
-                  className="hover:text-white"
+                  className="text-muted hover:text-text"
                   aria-label={`Remove ${sch.name} from comparison`}
                 >
                   <X className="w-3 h-3" />
@@ -43,7 +43,7 @@ export const CompareFloatingBar: React.FC = () => {
             ))}
             
             {compareIds.length < 3 && (
-              <span className="text-[11px] text-emerald-300 italic hidden md:inline">
+              <span className="text-[11px] text-muted italic hidden md:inline">
                 + Add {3 - compareIds.length} more
               </span>
             )}
@@ -55,7 +55,7 @@ export const CompareFloatingBar: React.FC = () => {
           <button
             type="button"
             onClick={clearCompare}
-            className="text-xs text-emerald-300 hover:text-white font-semibold px-2 py-1"
+            className="text-xs text-muted hover:text-text font-semibold px-2 py-1 min-h-[36px]"
           >
             Clear
           </button>
@@ -63,7 +63,7 @@ export const CompareFloatingBar: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/compare')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-[#133E2B] hover:bg-emerald-50 text-xs font-bold transition-all shadow-xs"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-contrast hover:opacity-95 text-xs font-bold transition-all shadow-xs min-h-[44px]"
           >
             <span>Compare ({compareIds.length}/3)</span>
             <ArrowRight className="w-3.5 h-3.5" />

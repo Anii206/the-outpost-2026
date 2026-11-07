@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { 
   UserProfile, 
@@ -373,7 +374,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 4. Family Income Limit Check
     if (scholarship.eligibilityRules.maxFamilyIncome) {
       const maxInc = scholarship.eligibilityRules.maxFamilyIncome;
-      let profileMaxInc = 500000;
+      let profileMaxInc: number;
       if (p.incomeBracket === '< ₹2,50,000') profileMaxInc = 250000;
       else if (p.incomeBracket === '₹2,50,000 - ₹6,00,000') profileMaxInc = 600000;
       else if (p.incomeBracket === '₹6,00,000 - ₹8,00,000') profileMaxInc = 800000;
