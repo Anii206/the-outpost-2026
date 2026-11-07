@@ -7,6 +7,7 @@ import { ScholarshipDetailPage } from './pages/ScholarshipDetailPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TrackerPage } from './pages/TrackerPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ComparePage } from './pages/ComparePage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/tracker" element={<TrackerPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/compare" element={<ComparePage />} />
             </Routes>
           </div>
           <Footer />

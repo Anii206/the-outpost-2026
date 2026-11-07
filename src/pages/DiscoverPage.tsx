@@ -16,6 +16,7 @@ import { ScholarshipCard } from '../components/ScholarshipCard';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { SkeletonCard } from '../components/SkeletonCard';
 import { EmptyState } from '../components/EmptyState';
+import { CompareFloatingBar } from '../components/CompareFloatingBar';
 import { getDaysRemaining } from '../utils/dateUtils';
 
 export const DiscoverPage: React.FC = () => {
@@ -520,6 +521,9 @@ export const DiscoverPage: React.FC = () => {
         </div>
 
       </main>
+
+      {/* Floating Compare Action Bar */}
+      <CompareFloatingBar />
 
     </div>
   );

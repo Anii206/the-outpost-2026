@@ -79,7 +79,7 @@ export interface UserProfile {
   isOnboarded: boolean;
 }
 
-export type TrackerStatus = 'saved' | 'applying' | 'submitted' | 'awarded';
+export type TrackerStatus = 'saved' | 'applying' | 'submitted' | 'awarded' | 'rejected';
 
 export interface TrackerItem {
   scholarshipId: string;

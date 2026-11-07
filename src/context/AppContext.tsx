@@ -17,12 +17,18 @@ interface AppContextType {
   isSaved: (scholarshipId: string) => boolean;
   trackerItems: Record<string, TrackerItem>;
   setTrackerStatus: (scholarshipId: string, status: TrackerStatus, notes?: string) => void;
+  updateTrackerNote: (scholarshipId: string, notes: string) => void;
   removeFromTracker: (scholarshipId: string) => void;
   getTrackerStatus: (scholarshipId: string) => TrackerStatus | undefined;
   calculateMatch: (scholarship: Scholarship, customProfile?: UserProfile) => MatchResult;
   checkedDocs: Record<string, string[]>;
   toggleDocumentCheck: (scholarshipId: string, docName: string) => void;
   isDocumentChecked: (scholarshipId: string, docName: string) => boolean;
+  // Compare state
+  compareIds: string[];
+  toggleCompare: (scholarshipId: string) => boolean;
+  clearCompare: () => void;
+  isCompared: (scholarshipId: string) => boolean;
 }
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -86,6 +92,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         'sch-01': { scholarshipId: 'sch-01', status: 'applying', updatedAt: new Date().toISOString(), notes: 'Income certificate submitted to college office' },
         'sch-02': { scholarshipId: 'sch-02', status: 'saved', updatedAt: new Date().toISOString() },
         'sch-05': { scholarshipId: 'sch-05', status: 'submitted', updatedAt: new Date().toISOString(), notes: 'Awaiting virtual interview notification' },
+        'sch-03': { scholarshipId: 'sch-03', status: 'awarded', updatedAt: new Date().toISOString(), notes: 'First installment of ₹75,000 received via DBT' },
       };
     } catch {
       return {};
@@ -101,6 +108,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     } catch {
       return {};
+    }
+  });
+
+  // 5. Comparison IDs state (max 3)
+  const [compareIds, setCompareIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('grantly_compare');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
   });
 
@@ -137,6 +154,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [checkedDocs]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('grantly_compare', JSON.stringify(compareIds));
+    } catch (e) {
+      console.error('Failed to persist compare items', e);
+    }
+  }, [compareIds]);
+
   const updateProfile = (updated: Partial<UserProfile>) => {
     setProfile(prev => ({ ...prev, ...updated, isOnboarded: true }));
   };
@@ -170,6 +195,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const updateTrackerNote = (scholarshipId: string, notes: string) => {
+    setTrackerItems(prev => {
+      if (!prev[scholarshipId]) return prev;
+      return {
+        ...prev,
+        [scholarshipId]: {
+          ...prev[scholarshipId],
+          notes,
+          updatedAt: new Date().toISOString(),
+        }
+      };
+    });
+  };
+
   const removeFromTracker = (scholarshipId: string) => {
     setTrackerItems(prev => {
       const next = { ...prev };
@@ -199,6 +238,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isDocumentChecked = (scholarshipId: string, docName: string): boolean => {
     return (checkedDocs[scholarshipId] || []).includes(docName);
   };
+
+  // Compare helpers
+  const toggleCompare = (scholarshipId: string): boolean => {
+    if (compareIds.includes(scholarshipId)) {
+      setCompareIds(prev => prev.filter(id => id !== scholarshipId));
+      return true;
+    } else {
+      if (compareIds.length >= 3) {
+        return false; // Limit reached
+      }
+      setCompareIds(prev => [...prev, scholarshipId]);
+      return true;
+    }
+  };
+
+  const clearCompare = () => setCompareIds([]);
+  const isCompared = (scholarshipId: string) => compareIds.includes(scholarshipId);
 
   // Indian Eligibility & Match Score Engine
   const calculateMatch = (scholarship: Scholarship, customProfile?: UserProfile): MatchResult => {
@@ -317,7 +373,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 4. Family Income Limit Check
     if (scholarship.eligibilityRules.maxFamilyIncome) {
       const maxInc = scholarship.eligibilityRules.maxFamilyIncome;
-      // Convert income bracket to rough estimated limit
       let profileMaxInc = 500000;
       if (p.incomeBracket === '< ₹2,50,000') profileMaxInc = 250000;
       else if (p.incomeBracket === '₹2,50,000 - ₹6,00,000') profileMaxInc = 600000;
@@ -444,12 +499,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSaved,
         trackerItems,
         setTrackerStatus,
+        updateTrackerNote,
         removeFromTracker,
         getTrackerStatus,
         calculateMatch,
         checkedDocs,
         toggleDocumentCheck,
         isDocumentChecked,
+        compareIds,
+        toggleCompare,
+        clearCompare,
+        isCompared,
       }}
     >
       {children}

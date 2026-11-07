@@ -9,7 +9,8 @@ import {
   MapPin, 
   Sparkles,
   KanbanSquare,
-  Clock
+  Clock,
+  Columns
 } from 'lucide-react';
 import type { Scholarship, TrackerStatus } from '../types';
 import { useApp } from '../context/AppContext';
@@ -21,10 +22,20 @@ interface ScholarshipCardProps {
 }
 
 export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship }) => {
-  const { isSaved, toggleSave, calculateMatch, getTrackerStatus, setTrackerStatus } = useApp();
+  const { 
+    isSaved, 
+    toggleSave, 
+    calculateMatch, 
+    getTrackerStatus, 
+    setTrackerStatus,
+    isCompared,
+    toggleCompare
+  } = useApp();
+
   const [showStatusMenu, setShowStatusMenu] = useState(false);
 
   const saved = isSaved(scholarship.id);
+  const compared = isCompared(scholarship.id);
   const currentTrackerStatus = getTrackerStatus(scholarship.id);
   const matchResult = calculateMatch(scholarship);
   const deadlineInfo = formatDeadlineBadge(scholarship.deadline);
@@ -34,7 +45,16 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
     { status: 'applying', label: 'Applying' },
     { status: 'submitted', label: 'Submitted' },
     { status: 'awarded', label: 'Awarded' },
+    { status: 'rejected', label: 'Rejected' },
   ];
+
+  const handleCompareClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const success = toggleCompare(scholarship.id);
+    if (!success && !compared) {
+      alert('You can compare a maximum of 3 scholarships simultaneously.');
+    }
+  };
 
   return (
     <motion.article
@@ -43,14 +63,16 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
       transition={{ duration: 0.25 }}
       whileHover={{ y: -4 }}
       className={`relative flex flex-col justify-between bg-white rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md ${
-        scholarship.featured 
+        compared 
+          ? 'border-emerald-600 ring-2 ring-emerald-600/20' 
+          : scholarship.featured 
           ? 'border-emerald-700/30 ring-1 ring-emerald-700/10' 
           : 'border-stone-200/90 hover:border-stone-300'
       } p-5 sm:p-6`}
       aria-labelledby={`scholarship-title-${scholarship.id}`}
     >
       <div>
-        {/* Top Badges & Bookmark */}
+        {/* Top Badges & Actions */}
         <div className="flex items-center justify-between gap-2 mb-3.5">
           <div className="flex items-center flex-wrap gap-2">
             
@@ -85,23 +107,41 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
             )}
           </div>
 
-          {/* Bookmark Toggle */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              toggleSave(scholarship.id);
-            }}
-            className={`p-2 rounded-xl transition-colors ${
-              saved
-                ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                : 'text-stone-400 hover:text-stone-600 hover:bg-stone-100'
-            }`}
-            aria-label={saved ? `Remove ${scholarship.name} from saved` : `Save ${scholarship.name}`}
-            title={saved ? 'Remove from saved' : 'Save scholarship'}
-          >
-            <Bookmark className={`w-4 h-4 ${saved ? 'fill-amber-500 text-amber-600' : ''}`} />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Compare Checkbox Button */}
+            <button
+              type="button"
+              onClick={handleCompareClick}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                compared 
+                  ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                  : 'bg-stone-50 hover:bg-stone-100 text-stone-600 border-stone-200'
+              }`}
+              title={compared ? 'Remove from compare' : 'Compare scholarship (up to 3)'}
+              aria-label={compared ? `Remove ${scholarship.name} from comparison` : `Add ${scholarship.name} to comparison`}
+            >
+              <Columns className="w-3 h-3" />
+              <span className="hidden sm:inline">{compared ? 'Compared' : 'Compare'}</span>
+            </button>
+
+            {/* Bookmark Toggle */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                toggleSave(scholarship.id);
+              }}
+              className={`p-2 rounded-xl transition-colors ${
+                saved
+                  ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                  : 'text-stone-400 hover:text-stone-600 hover:bg-stone-100'
+              }`}
+              aria-label={saved ? `Remove ${scholarship.name} from saved` : `Save ${scholarship.name}`}
+              title={saved ? 'Remove from saved' : 'Save scholarship'}
+            >
+              <Bookmark className={`w-4 h-4 ${saved ? 'fill-amber-500 text-amber-600' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Provider */}
@@ -124,7 +164,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
           {scholarship.description}
         </p>
 
-        {/* Tags (Level, Category, Country/State) */}
+        {/* Tags */}
         <div className="flex flex-wrap items-center gap-1.5 mb-5 text-xs text-stone-600">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 font-medium">
             <GraduationCap className="w-3 h-3 text-stone-500" />
@@ -141,7 +181,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
       </div>
 
       <div>
-        {/* Award Amount & Deadline (Red when < 7 days, Amber when < 14 days) */}
+        {/* Award Amount & Deadline */}
         <div className="pt-4 border-t border-stone-100 flex items-end justify-between gap-3 mb-4">
           <div>
             <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider block">Award Amount</span>
@@ -168,7 +208,7 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
           </div>
         </div>
 
-        {/* Action Buttons: View Details & Track status dropdown */}
+        {/* Action Buttons: View Details & Track stage dropdown */}
         <div className="flex items-center gap-2 pt-1 relative">
           <Link
             to={`/scholarship/${scholarship.id}`}
