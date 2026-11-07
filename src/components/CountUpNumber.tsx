@@ -55,7 +55,7 @@ export const CountUpNumber: React.FC<CountUpNumberProps> = ({
   const formatted = count.toLocaleString('en-IN');
 
   return (
-    <span className={className}>
+    <span className={`font-serif lining-nums ${className}`.trim()}>
       {prefix}{formatted}{suffix}
     </span>
   );

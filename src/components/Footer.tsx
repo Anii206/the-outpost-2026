@@ -18,7 +18,7 @@ export const Footer: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-muted leading-relaxed font-sans">
-              A public-service scholarship ledger empowering Indian students to discover, track, and win government, trust, and CSR scholarships without intermediaries.
+              An independent scholarship gazette empowering Indian students to discover, track, and apply for government, trust, and CSR scholarships without intermediaries.
             </p>
           </div>
 
@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="font-sans text-[11px] uppercase tracking-widest font-bold text-muted mb-3">Verified Portals</h4>
+            <h4 className="font-sans text-[11px] uppercase tracking-widest font-bold text-muted mb-3">External Portals</h4>
             <ul className="space-y-2 text-xs text-muted font-sans">
               <li>National Scholarship Portal (NSP 2.0)</li>
               <li>AICTE Technical Education Bureau</li>
@@ -51,12 +51,18 @@ export const Footer: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 text-xs text-muted font-sans">
               <Sparkle size={16} className="text-accent shrink-0" />
-              <span>Updated bi-weekly with official gazette notices.</span>
+              <span>Curated bi-weekly from publicly announced scholarship guidelines.</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between text-[11px] text-muted font-mono gap-4">
+        <div className="mt-8 pt-4 border-t border-border/60 text-center sm:text-left">
+          <p className="text-xs font-sans text-muted/90 italic">
+            Sample data for demonstration. Always confirm details on the official portal.
+          </p>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between text-[11px] text-muted font-mono gap-4">
           <p>© 2026 The Grantly Gazette. Printed digitally for scholars across India.</p>
           <p className="flex items-center gap-1">
             Indian Higher Education Financial Mobility Initiative

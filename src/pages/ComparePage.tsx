@@ -250,7 +250,7 @@ export const ComparePage: React.FC = () => {
 
                 {/* Footer Action Row */}
                 <tr className="bg-surface-2 border-t-2 border-border">
-                  <td className="p-4 font-sans text-xs font-bold text-text">Official Filing Link</td>
+                  <td className="p-4 font-sans text-xs font-bold text-text">Direct Portal Link</td>
                   {comparedScholarships.map((sch) => (
                     <td key={sch.id} className="p-4 align-middle border-l border-border">
                       <a

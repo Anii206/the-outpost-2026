@@ -6,7 +6,6 @@ import { Faders } from '@phosphor-icons/react/dist/csr/Faders';
 import { ArrowsDownUp } from '@phosphor-icons/react/dist/csr/ArrowsDownUp';
 import { ArrowRight } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { Sparkle } from '@phosphor-icons/react/dist/csr/Sparkle';
-import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle';
 import { Clock } from '@phosphor-icons/react/dist/csr/Clock';
 import { getScholarships } from '../services/api';
 import type { FilterState, Scholarship, ScholarshipCategory } from '../types';
@@ -166,16 +165,16 @@ export const DiscoverPage: React.FC = () => {
         >
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
-              <WarningCircle size={16} className="text-accent shrink-0" />
+              <Sparkle size={16} className="text-accent shrink-0" />
               <span className="font-sans">
-                <strong>Notice:</strong> Complete your Student Dossier in 60 seconds to unlock automated eligibility calculation for state DBT portals, caste reservations, and income ceilings.
+                <strong>Notice:</strong> Create your profile to see matches across state DBT portals, category reservations, and income ceilings.
               </span>
             </div>
             <Link
               to="/profile"
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs shrink-0 hover:opacity-90 transition-opacity min-h-[36px]"
             >
-              <span>Complete Dossier</span>
+              <span>Create profile</span>
               <ArrowRight size={13} />
             </Link>
           </div>
@@ -193,7 +192,7 @@ export const DiscoverPage: React.FC = () => {
               <span>
                 {profile.isOnboarded
                   ? `Active Dossier: ${profile.name.split(' ')[0]} • ${profile.category} • ${profile.state}`
-                  : 'Official Financial Aid Broad-sheet'}
+                  : 'An independent scholarship gazette'}
               </span>
             </div>
 
@@ -203,14 +202,14 @@ export const DiscoverPage: React.FC = () => {
                 end={totalFundingAmount > 0 ? totalFundingAmount : 48250000}
                 prefix="₹"
                 suffix="+"
-                className="text-primary font-mono"
+                className="font-serif lining-nums text-primary font-black"
               />{' '}
               in scholarships open now
             </h1>
 
             {/* Editorial subtext */}
             <p className="font-sans text-sm sm:text-base text-muted max-w-2xl mx-auto leading-relaxed">
-              The verified national ledger of government, corporate CSR, and foundation fellowships. Evaluated against verified academic records and reservation rules.
+              An independent scholarship gazette tracking government, corporate CSR, and foundation fellowships across India. Match scores are calculated against your academic profile and reservation criteria.
             </p>
 
             {/* Hero CTA & Search Bar */}
@@ -286,7 +285,7 @@ export const DiscoverPage: React.FC = () => {
             <div className="flex items-center gap-2 shrink-0">
               <Clock size={16} className="text-accent" />
               <h2 className="font-sans text-xs font-bold uppercase tracking-wider text-text">
-                {closingSoonSchemes.length} schemes close this week — file required documents before deadline
+                {closingSoonSchemes.length} schemes closing within 14 days — file required documents before deadline
               </h2>
             </div>
 
@@ -533,10 +532,10 @@ export const DiscoverPage: React.FC = () => {
                     <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-border">
                       <div className="flex items-center gap-2">
                         <span className="font-sans text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 bg-primary text-primary-contrast rounded-[2px]">
-                          Official Lead Notice
+                          Lead Gazette Notice
                         </span>
                         <span className="font-mono text-xs font-bold text-primary">
-                          {calculateMatch(featuredScholarship).score}% ELIGIBILITY MATCH
+                          {profile.isOnboarded ? `${calculateMatch(featuredScholarship).score}% ELIGIBILITY MATCH` : 'CREATE PROFILE TO SEE MATCH'}
                         </span>
                       </div>
                       <div className="deadline-stamp">

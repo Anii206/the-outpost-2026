@@ -20,6 +20,7 @@ interface ScholarshipCardProps {
 
 export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship }) => {
   const {
+    profile,
     isSaved,
     toggleSave,
     calculateMatch,
@@ -72,18 +73,28 @@ export const ScholarshipCard: React.FC<ScholarshipCardProps> = ({ scholarship })
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center flex-wrap gap-2">
             {/* Match Badge */}
-            <div
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-xs font-mono font-bold ${
-                matchResult.score >= 80
-                  ? 'bg-primary/10 text-primary border border-primary/25'
-                  : matchResult.score >= 60
-                  ? 'bg-accent/15 text-accent border border-accent/25'
-                  : 'bg-surface-2 text-muted border border-border'
-              }`}
-              title={matchResult.reasons.join('\n')}
-            >
-              <span>{matchResult.score}% MATCH</span>
-            </div>
+            {profile.isOnboarded ? (
+              <div
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-xs font-mono font-bold ${
+                  matchResult.score >= 80
+                    ? 'bg-primary/10 text-primary border border-primary/25'
+                    : matchResult.score >= 60
+                    ? 'bg-accent/15 text-accent border border-accent/25'
+                    : 'bg-surface-2 text-muted border border-border'
+                }`}
+                title={matchResult.reasons.join('\n')}
+              >
+                <span>{matchResult.score}% MATCH</span>
+              </div>
+            ) : (
+              <Link
+                to="/profile"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[11px] font-mono text-muted hover:text-primary bg-surface-2 border border-border transition-colors"
+                title="Create your profile to calculate match"
+              >
+                <span>Match: Set Profile</span>
+              </Link>
+            )}
 
             {/* Featured Notice */}
             {scholarship.featured && (

@@ -5,7 +5,6 @@ import { CalendarBlank } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { ArrowRight } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { Sparkle } from '@phosphor-icons/react/dist/csr/Sparkle';
 import { FileText } from '@phosphor-icons/react/dist/csr/FileText';
-import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle';
 import { ChartBar } from '@phosphor-icons/react/dist/csr/ChartBar';
 import { useApp } from '../context/AppContext';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -158,12 +157,12 @@ export const DashboardPage: React.FC = () => {
         {!profile.isOnboarded && (
           <aside
             aria-label="Student profile incomplete notification"
-            className="border border-accent/30 bg-surface rounded-[4px] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-text"
+            className="border border-border bg-surface rounded-[4px] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-text"
           >
             <div className="flex items-center gap-2.5">
-              <WarningCircle size={20} className="text-accent shrink-0" />
+              <Sparkle size={20} className="text-accent shrink-0" />
               <div>
-                <h3 className="font-serif font-bold text-sm text-text">Complete Student Eligibility Dossier</h3>
+                <h3 className="font-serif font-bold text-sm text-text">Create your profile to see matches</h3>
                 <p className="font-sans text-xs text-muted">
                   Specify academic scores, social category, and state of domicile to calibrate matching accuracy.
                 </p>
@@ -173,7 +172,7 @@ export const DashboardPage: React.FC = () => {
               to="/profile"
               className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs shrink-0 hover:opacity-90 transition-opacity min-h-[38px]"
             >
-              <span>Setup Dossier</span>
+              <span>Create profile</span>
               <ArrowRight size={13} />
             </Link>
           </aside>
@@ -189,7 +188,7 @@ export const DashboardPage: React.FC = () => {
                 <span>Candidate Docket Ledger</span>
               </div>
               <h1 className="font-serif text-2xl sm:text-4xl font-black text-text tracking-tight">
-                Welcome back, {profile.name?.trim() ? profile.name.split(' ')[0] : 'Scholar'}
+                {profile.isOnboarded && profile.name?.trim() ? `Welcome back, ${profile.name.split(' ')[0]}` : 'Executive Student Briefing'}
               </h1>
               <p className="font-sans text-xs sm:text-sm text-muted mt-0.5">
                 Financial dispatch summarizing qualified schemes, upcoming closing notices, and document verification.
@@ -204,14 +203,14 @@ export const DashboardPage: React.FC = () => {
               <div>
                 <p className="font-sans text-xs font-bold text-text">Dossier Readiness</p>
                 <p className="font-sans text-[11px] text-muted">
-                  {profile.isOnboarded ? `${profile.category} • ${profile.state}` : 'Onboarding pending'}
+                  {profile.isOnboarded ? `${profile.category} • ${profile.state}` : 'Create your profile to see matches'}
                 </p>
               </div>
               <Link
                 to="/profile"
                 className="ml-auto text-xs font-semibold text-primary hover:underline min-h-[36px] flex items-center"
               >
-                Edit &rarr;
+                {profile.isOnboarded ? 'Edit →' : 'Set up →'}
               </Link>
             </div>
           </div>
@@ -222,8 +221,8 @@ export const DashboardPage: React.FC = () => {
               <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-muted block">
                 Total Potential Funding Eligible For (Match &ge; 70%)
               </span>
-              <div className="font-mono text-3xl sm:text-5xl font-black text-primary tracking-tight">
-                <CountUpNumber end={eligibleTotalAmount} prefix="₹" className="text-primary font-mono" />
+              <div className="font-serif lining-nums text-3xl sm:text-5xl font-black text-primary tracking-tight">
+                <CountUpNumber end={eligibleTotalAmount} prefix="₹" className="font-serif lining-nums text-primary font-black" />
               </div>
               <p className="font-sans text-xs text-muted">
                 Across {eligibleCount} qualifying government and corporate fellowship schemes

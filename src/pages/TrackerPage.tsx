@@ -119,7 +119,7 @@ export const TrackerPage: React.FC = () => {
               </h1>
             </div>
             <p className="font-sans text-xs sm:text-sm text-muted">
-              Official candidate docket to manage submissions, document assembly, and application status.
+              Personal candidate docket to manage submissions, document assembly, and application status.
             </p>
           </div>
 
@@ -150,7 +150,11 @@ export const TrackerPage: React.FC = () => {
                 }`}
               >
                 <span>{col.label}</span>
-                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-[2px] bg-surface-2 text-text border border-border">
+                <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded-[2px] ${
+                  isSelected
+                    ? 'bg-primary-contrast/20 text-primary-contrast'
+                    : 'bg-surface-2 text-text border border-border'
+                }`}>
                   {count}
                 </span>
               </button>

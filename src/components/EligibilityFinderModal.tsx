@@ -310,7 +310,7 @@ export const EligibilityFinderModal: React.FC<EligibilityFinderModalProps> = ({
                 <Trophy size={24} />
               </div>
               <h3 className="font-serif text-2xl font-bold text-text">
-                Dossier Matched & Verified
+                Dossier Matched & Synchronized
               </h3>
               <p className="font-sans text-xs text-muted">
                 Showing schemes matching {category} category • {level} in {state}

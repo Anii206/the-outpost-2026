@@ -111,7 +111,7 @@ export const ScholarshipDetailPage: React.FC = () => {
           Gazette Record Not Found
         </h1>
         <p className="font-sans text-xs sm:text-sm text-muted max-w-md mx-auto mb-6 leading-relaxed">
-          The requested scholarship identifier does not correspond to an active notice in the official ledger. It may have concluded its application window.
+          The requested scholarship identifier does not correspond to an active notice in the gazette ledger. It may have concluded its application window.
         </p>
         <Link
           to="/"
@@ -308,7 +308,7 @@ export const ScholarshipDetailPage: React.FC = () => {
               <div>
                 <h2 className="font-serif text-lg font-bold text-text">Eligibility Verification Breakdown</h2>
                 <p className="font-sans text-xs text-muted">
-                  Official criteria audit based on scheme notification rules.
+                  Eligibility criteria audit based on scheme notification rules.
                 </p>
               </div>
 
@@ -371,7 +371,7 @@ export const ScholarshipDetailPage: React.FC = () => {
                             : 'bg-accent/15 text-accent border border-accent/25'
                         }`}
                       >
-                        {isMet ? 'Verified Met' : isNotMet ? 'Unmet' : 'Review'}
+                        {isMet ? 'Criteria Met' : isNotMet ? 'Unmet' : 'Review'}
                       </span>
                     </div>
                   </div>
@@ -379,10 +379,10 @@ export const ScholarshipDetailPage: React.FC = () => {
               })}
             </div>
 
-            {/* Official Scheme Descriptions */}
+            {/* Scheme Descriptions */}
             <div className="pt-3 border-t border-border">
               <h3 className="font-sans text-[11px] font-bold uppercase tracking-widest text-muted mb-2">
-                Official Regulatory Clauses
+                Scheme Regulatory Clauses
               </h3>
               <ul className="space-y-1.5 font-sans text-xs text-text">
                 {scholarship.eligibilityRules.descriptions.map((desc, idx) => (
@@ -461,8 +461,8 @@ export const ScholarshipDetailPage: React.FC = () => {
         {/* STEP-BY-STEP APPLICATION TIMELINE */}
         <section className="bg-surface rounded-[4px] border border-border p-6 space-y-4 transition-colors">
           <div className="pb-3 border-b border-border">
-            <h2 className="font-serif text-lg font-bold text-text">Official Filing Procedure</h2>
-            <p className="font-sans text-xs text-muted">Statutory stages from verification to DBT disbursement.</p>
+            <h2 className="font-serif text-lg font-bold text-text">Application Procedure</h2>
+            <p className="font-sans text-xs text-muted">Procedural stages from document assembly to direct benefit transfer.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

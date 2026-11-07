@@ -6,7 +6,7 @@ import { ArrowLeft } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { Sparkle } from '@phosphor-icons/react/dist/csr/Sparkle';
 import { ArrowCounterClockwise } from '@phosphor-icons/react/dist/csr/ArrowCounterClockwise';
 import { Certificate } from '@phosphor-icons/react/dist/csr/Certificate';
-import { useApp } from '../context/AppContext';
+import { useApp, DEMO_PROFILE } from '../context/AppContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import type { AcademicLevel, SocialCategory, IncomeBracket, UserProfile } from '../types';
 import { ALL_LEVELS, INDIAN_STATES, SOCIAL_CATEGORIES } from '../data/scholarships';
@@ -129,6 +129,25 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleLoadDemoProfile = () => {
+    setFormData({
+      name: DEMO_PROFILE.name,
+      email: DEMO_PROFILE.email,
+      course: DEMO_PROFILE.course,
+      level: DEMO_PROFILE.level,
+      percentage: DEMO_PROFILE.percentage.toString(),
+      incomeBracket: DEMO_PROFILE.incomeBracket,
+      category: DEMO_PROFILE.category,
+      state: DEMO_PROFILE.state,
+      gender: DEMO_PROFILE.gender,
+      isFirstGraduate: DEMO_PROFILE.isFirstGraduate,
+      hasDisability: DEMO_PROFILE.hasDisability,
+    });
+    updateProfile(DEMO_PROFILE);
+    setErrors({});
+    setIsSaved(false);
+  };
+
   const progressPercentage = step === 1 ? 33 : step === 2 ? 66 : 100;
 
   return (
@@ -153,15 +172,27 @@ export const ProfilePage: React.FC = () => {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleClearProfile}
-            className="flex items-center gap-1 text-xs font-semibold text-muted hover:text-accent transition-colors p-1.5 rounded-[2px] hover:bg-surface-2 min-h-[36px]"
-            title="Reset profile data"
-          >
-            <ArrowCounterClockwise size={13} />
-            <span className="hidden sm:inline">Reset</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleLoadDemoProfile}
+              className="flex items-center gap-1.5 text-xs font-semibold text-text hover:text-primary transition-colors px-2.5 py-1.5 rounded-[2px] bg-surface-2 border border-border min-h-[36px]"
+              title="Load demo candidate dossier (Ananya Sharma) for testing"
+            >
+              <Sparkle size={13} className="text-accent" />
+              <span>Load demo profile</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleClearProfile}
+              className="flex items-center gap-1 text-xs font-semibold text-muted hover:text-accent transition-colors p-1.5 rounded-[2px] hover:bg-surface-2 min-h-[36px]"
+              title="Reset profile data"
+            >
+              <ArrowCounterClockwise size={13} />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          </div>
         </div>
 
         {/* Multi-step Visual Progress Bar */}
@@ -191,7 +222,7 @@ export const ProfilePage: React.FC = () => {
                 Dossier Successfully Recorded
               </h2>
               <p className="font-sans text-xs sm:text-sm text-muted max-w-md mx-auto leading-relaxed">
-                Eligibility algorithms and reservation scores have been synchronized across all verified scholarship entries.
+                Eligibility algorithms and reservation scores have been synchronized across all indexed scholarship entries.
               </p>
             </div>
 

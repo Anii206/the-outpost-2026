@@ -30,9 +30,10 @@ interface AppContextType {
   toggleCompare: (scholarshipId: string) => boolean;
   clearCompare: () => void;
   isCompared: (scholarshipId: string) => boolean;
+  loadDemoProfile: () => void;
 }
 
-const DEFAULT_PROFILE: UserProfile = {
+export const DEMO_PROFILE: UserProfile = {
   name: 'Ananya Sharma',
   email: 'ananya.sharma@college.ac.in',
   course: 'B.Tech in Computer Engineering',
@@ -47,7 +48,7 @@ const DEFAULT_PROFILE: UserProfile = {
   isOnboarded: true,
 };
 
-const EMPTY_PROFILE: UserProfile = {
+export const EMPTY_PROFILE: UserProfile = {
   name: '',
   email: '',
   course: '',
@@ -69,9 +70,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [profile, setProfile] = useState<UserProfile>(() => {
     try {
       const stored = localStorage.getItem('grantly_profile');
-      return stored ? JSON.parse(stored) : DEFAULT_PROFILE;
+      return stored ? JSON.parse(stored) : EMPTY_PROFILE;
     } catch {
-      return DEFAULT_PROFILE;
+      return EMPTY_PROFILE;
     }
   });
 
@@ -79,9 +80,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [savedIds, setSavedIds] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('grantly_saved');
-      return stored ? JSON.parse(stored) : ['sch-01', 'sch-02', 'sch-05'];
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return ['sch-01', 'sch-02', 'sch-05'];
+      return [];
     }
   });
 
@@ -89,12 +90,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [trackerItems, setTrackerItems] = useState<Record<string, TrackerItem>>(() => {
     try {
       const stored = localStorage.getItem('grantly_tracker');
-      return stored ? JSON.parse(stored) : {
-        'sch-01': { scholarshipId: 'sch-01', status: 'applying', updatedAt: new Date().toISOString(), notes: 'Income certificate submitted to college office' },
-        'sch-02': { scholarshipId: 'sch-02', status: 'saved', updatedAt: new Date().toISOString() },
-        'sch-05': { scholarshipId: 'sch-05', status: 'submitted', updatedAt: new Date().toISOString(), notes: 'Awaiting virtual interview notification' },
-        'sch-03': { scholarshipId: 'sch-03', status: 'awarded', updatedAt: new Date().toISOString(), notes: 'First installment of ₹75,000 received via DBT' },
-      };
+      return stored ? JSON.parse(stored) : {};
     } catch {
       return {};
     }
@@ -104,9 +100,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [checkedDocs, setCheckedDocs] = useState<Record<string, string[]>>(() => {
     try {
       const stored = localStorage.getItem('grantly_checked_docs');
-      return stored ? JSON.parse(stored) : {
-        'sch-01': ['Class 10 and 12 Board Marksheets', 'Aadhaar Card linked with Bank Account']
-      };
+      return stored ? JSON.parse(stored) : {};
     } catch {
       return {};
     }
@@ -170,6 +164,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resetProfile = () => {
     setProfile(EMPTY_PROFILE);
     localStorage.removeItem('grantly_profile');
+  };
+
+  const loadDemoProfile = () => {
+    setProfile(DEMO_PROFILE);
   };
 
   const toggleSave = (scholarshipId: string) => {
@@ -511,6 +509,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleCompare,
         clearCompare,
         isCompared,
+        loadDemoProfile,
       }}
     >
       {children}

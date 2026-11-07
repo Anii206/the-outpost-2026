@@ -75,6 +75,17 @@ h1, h2, h3, .font-editorial {
   letter-spacing: -0.02em;
 }
 
+/* Ensure Fraunces lining figures support */
+.lining-nums {
+  font-variant-numeric: lining-nums;
+  font-feature-settings: "lnum" 1;
+}
+
+/* Ensure any element with primary background uses dark primary-contrast text in dark mode (#14120F) */
+.bg-primary {
+  color: var(--primary-contrast);
+}
+
 /* Base form controls styling in both modes */
 input, select, textarea {
   color: var(--text);

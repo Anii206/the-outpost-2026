@@ -18,6 +18,7 @@ interface ScholarshipRowProps {
 
 export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) => {
   const {
+    profile,
     isSaved,
     toggleSave,
     calculateMatch,
@@ -61,10 +62,21 @@ export const ScholarshipRow: React.FC<ScholarshipRowProps> = ({ scholarship }) =
       {/* Left Column: Match & Details */}
       <div className="flex items-start gap-4 flex-1 min-w-0 pr-6">
         {/* Match Score Badge */}
-        <div className="shrink-0 flex flex-col items-center justify-center w-14 py-2 px-1 rounded-[2px] border border-border bg-surface-2 text-center">
-          <span className="font-mono text-sm font-bold text-primary">{matchResult.score}%</span>
-          <span className="text-[9px] uppercase font-bold tracking-wider text-muted font-sans">Match</span>
-        </div>
+        {profile.isOnboarded ? (
+          <div className="shrink-0 flex flex-col items-center justify-center w-14 py-2 px-1 rounded-[2px] border border-border bg-surface-2 text-center">
+            <span className="font-mono text-sm font-bold text-primary">{matchResult.score}%</span>
+            <span className="text-[9px] uppercase font-bold tracking-wider text-muted font-sans">Match</span>
+          </div>
+        ) : (
+          <Link
+            to="/profile"
+            className="shrink-0 flex flex-col items-center justify-center w-14 py-2 px-1 rounded-[2px] border border-border bg-surface-2 text-center hover:border-primary/50 transition-colors"
+            title="Create your profile to see matches"
+          >
+            <span className="font-mono text-xs font-bold text-muted">--</span>
+            <span className="text-[9px] uppercase font-bold tracking-wider text-muted font-sans">Match</span>
+          </Link>
+        )}
 
         {/* Scheme Info */}
         <div className="min-w-0 flex-1">

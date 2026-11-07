@@ -80,9 +80,9 @@ export const Navbar: React.FC = () => {
         <div className="border-b border-border bg-surface/50 text-xs py-1.5 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 overflow-hidden text-muted text-[11px] font-mono tracking-tight">
-              <span className="font-semibold text-text uppercase shrink-0">{todayFormatted}</span>
+              <span className="font-semibold text-text uppercase shrink-0 truncate max-w-[180px] sm:max-w-none">{todayFormatted}</span>
               <span className="hidden sm:inline text-border">/</span>
-              <span className="hidden sm:inline truncate">Official National Higher Education Financial Gazette</span>
+              <span className="hidden sm:inline truncate">An independent scholarship gazette</span>
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
@@ -122,21 +122,21 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Newspaper Center Masthead Wordmark */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 md:py-5">
           <div className="flex items-center justify-between">
             <Link 
               to="/" 
               className="flex flex-col group focus:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-[2px]"
               aria-label="Grantly Home"
             >
-              <div className="flex items-baseline gap-2.5">
-                <span className="font-serif text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-text leading-none group-hover:text-primary transition-colors">
+              <div className="flex items-baseline gap-2">
+                <span className="font-serif text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-text leading-none group-hover:text-primary transition-colors">
                   THE GRANTLY GAZETTE
                 </span>
                 <span className="hidden sm:inline-block w-2 h-2 rounded-full bg-accent" />
               </div>
-              <p className="font-sans text-[11px] uppercase tracking-widest text-muted mt-1 font-semibold">
-                Verified Indian Scholarship & Fellowship Gazette • Est. 2026
+              <p className="font-sans text-[10px] sm:text-[11px] uppercase tracking-widest text-muted mt-0.5 sm:mt-1 font-semibold">
+                An independent scholarship gazette • Est. 2026
               </p>
             </Link>
 
@@ -160,14 +160,14 @@ export const Navbar: React.FC = () => {
                 aria-label="Student profile status"
               >
                 <div className="w-5 h-5 rounded-[2px] bg-primary text-primary-contrast flex items-center justify-center text-[10px] font-bold font-mono">
-                  {profile.name?.trim() ? profile.name.charAt(0).toUpperCase() : 'S'}
+                  {profile.isOnboarded && profile.name?.trim() ? profile.name.charAt(0).toUpperCase() : 'S'}
                 </div>
                 <div className="text-left">
                   <p className="text-xs font-semibold leading-none text-text">
-                    {profile.name?.trim() ? profile.name.split(' ')[0] : 'Profile'}
+                    {profile.isOnboarded && profile.name?.trim() ? profile.name.split(' ')[0] : 'Profile'}
                   </p>
-                  <p className="text-[10px] text-primary font-medium mt-0.5">
-                    {profile.isOnboarded ? 'Verified' : 'Incomplete'}
+                  <p className="text-[10px] text-muted font-medium mt-0.5">
+                    {profile.isOnboarded ? 'Dossier Set' : 'Create profile'}
                   </p>
                 </div>
               </Link>
@@ -257,7 +257,9 @@ export const Navbar: React.FC = () => {
                     <span>{link.label}</span>
                   </div>
                   {link.badge !== undefined && (
-                    <span className="font-mono text-xs px-2 py-0.5 rounded-[2px] bg-surface-2 text-text border border-border">
+                    <span className={`font-mono text-xs px-2 py-0.5 rounded-[2px] ${
+                      active ? 'bg-primary-contrast/20 text-primary-contrast' : 'bg-surface-2 text-text border border-border'
+                    }`}>
                       {link.badge}
                     </span>
                   )}

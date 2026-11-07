@@ -180,7 +180,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
             {/* Top Scholarships */}
             <Command.Group
-              heading="Verified Schemes"
+              heading="Gazette Scheme Directory"
               className="px-2 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-muted border-t border-border mt-2"
             >
               {SCHOLARSHIPS.map((scholarship) => (

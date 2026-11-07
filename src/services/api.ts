@@ -110,7 +110,7 @@ export async function getSimilarScholarships(id: string, limit = 3): Promise<Sch
 }
 
 /**
- * Fetch all verified scholarships without filtering
+ * Fetch all indexed scholarships without filtering
  */
 export async function getAllScholarships(): Promise<Scholarship[]> {
   return simulateLatency([...SCHOLARSHIPS], 400, 600);
