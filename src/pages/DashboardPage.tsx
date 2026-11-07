@@ -1,23 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Clock, 
-  Calendar as CalendarIcon, 
-  ArrowRight, 
-  Sparkles, 
-  FileText, 
-  AlertCircle,
-  KanbanSquare,
-  Award
-} from 'lucide-react';
+import { Clock } from '@phosphor-icons/react/dist/csr/Clock';
+import { CalendarBlank } from '@phosphor-icons/react/dist/csr/CalendarBlank';
+import { ArrowRight } from '@phosphor-icons/react/dist/csr/ArrowRight';
+import { Sparkle } from '@phosphor-icons/react/dist/csr/Sparkle';
+import { FileText } from '@phosphor-icons/react/dist/csr/FileText';
+import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle';
+import { ChartBar } from '@phosphor-icons/react/dist/csr/ChartBar';
 import { useApp } from '../context/AppContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { SCHOLARSHIPS } from '../data/scholarships';
-import { formatINR, formatReadableDate, getDaysRemaining } from '../utils/dateUtils';
+import { formatReadableDate, getDaysRemaining, formatDeadlineBadge } from '../utils/dateUtils';
+import { CountUpNumber } from '../components/CountUpNumber';
 import { ScholarshipCard } from '../components/ScholarshipCard';
 
+const DashboardPipelineChart = React.lazy(() => import('../components/DashboardPipelineChart'));
+const DashboardMonthlyChart = React.lazy(() => import('../components/DashboardMonthlyChart'));
+
 export const DashboardPage: React.FC = () => {
-  usePageTitle('Scholarship Dashboard');
+  usePageTitle('Executive Briefing (Dashboard) — Grantly Gazette');
   const { trackerItems, savedIds, profile, calculateMatch, checkedDocs } = useApp();
   const [calendarFilter, setCalendarFilter] = useState<'all' | 'tracked'>('all');
 
@@ -39,7 +40,7 @@ export const DashboardPage: React.FC = () => {
   const { eligibleTotalAmount, eligibleCount } = useMemo(() => {
     let total = 0;
     let count = 0;
-    SCHOLARSHIPS.forEach(sch => {
+    SCHOLARSHIPS.forEach((sch) => {
       const match = calculateMatch(sch);
       if (match.score >= 70) {
         total += sch.amount;
@@ -52,7 +53,7 @@ export const DashboardPage: React.FC = () => {
   // 3. Pipeline counts
   const pipelineCounts = useMemo(() => {
     const counts = { saved: 0, applying: 0, submitted: 0, awarded: 0, rejected: 0 };
-    Object.values(trackerItems).forEach(item => {
+    Object.values(trackerItems).forEach((item) => {
       if (counts[item.status] !== undefined) {
         counts[item.status]++;
       }
@@ -60,6 +61,16 @@ export const DashboardPage: React.FC = () => {
     const totalTracked = Object.keys(trackerItems).length;
     return { ...counts, totalTracked };
   }, [trackerItems]);
+
+  // Pipeline data for Recharts
+  const pipelineChartData = useMemo(() => {
+    return [
+      { name: 'Saved', count: pipelineCounts.saved, fill: '#6B655A' },
+      { name: 'Applying', count: pipelineCounts.applying, fill: '#D9401F' },
+      { name: 'Submitted', count: pipelineCounts.submitted, fill: '#1F4D3A' },
+      { name: 'Awarded', count: pipelineCounts.awarded, fill: '#7FBF9E' },
+    ];
+  }, [pipelineCounts]);
 
   // 4. Document Readiness Percentage across all tracked scholarships
   const documentReadiness = useMemo(() => {
@@ -69,8 +80,8 @@ export const DashboardPage: React.FC = () => {
     let totalRequired = 0;
     let totalGathered = 0;
 
-    trackedIds.forEach(id => {
-      const sch = SCHOLARSHIPS.find(s => s.id === id);
+    trackedIds.forEach((id) => {
+      const sch = SCHOLARSHIPS.find((s) => s.id === id);
       if (sch) {
         totalRequired += sch.documentsRequired.length;
         const gatheredForThis = (checkedDocs[id] || []).length;
@@ -91,395 +102,328 @@ export const DashboardPage: React.FC = () => {
 
   // 6. Upcoming Deadlines (Next 5 by date)
   const upcomingDeadlines = useMemo(() => {
-    return SCHOLARSHIPS
-      .filter(s => getDaysRemaining(s.deadline) >= 0)
+    return SCHOLARSHIPS.filter((s) => getDaysRemaining(s.deadline) >= 0)
       .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
       .slice(0, 5);
   }, []);
 
-  // 7. Grouped by Month Timeline / Calendar data
-  const groupedCalendar = useMemo(() => {
-    const targetList = calendarFilter === 'tracked'
-      ? SCHOLARSHIPS.filter(s => trackerItems[s.id] || savedIds.includes(s.id))
-      : SCHOLARSHIPS;
+  // 7. Monthly Volume Data & Groups
+  const { monthlyChartData, groupedCalendar } = useMemo(() => {
+    const targetList =
+      calendarFilter === 'tracked'
+        ? SCHOLARSHIPS.filter((s) => trackerItems[s.id] || savedIds.includes(s.id))
+        : SCHOLARSHIPS;
 
     const groups: Record<string, typeof SCHOLARSHIPS> = {};
+    const monthlyStats: Record<string, { month: string; count: number; volume: number }> = {};
 
     targetList
-      .filter(s => getDaysRemaining(s.deadline) >= 0)
+      .filter((s) => getDaysRemaining(s.deadline) >= 0)
       .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-      .forEach(sch => {
+      .forEach((sch) => {
         const parts = sch.deadline.split('-');
         if (parts.length === 3) {
           const year = parseInt(parts[0], 10);
           const month = parseInt(parts[1], 10) - 1;
           const monthName = new Date(year, month, 1).toLocaleDateString('en-IN', {
-            month: 'long',
-            year: 'numeric'
+            month: 'short',
+            year: '2-digit',
           });
-          if (!groups[monthName]) groups[monthName] = [];
-          groups[monthName].push(sch);
+          const fullMonthName = new Date(year, month, 1).toLocaleDateString('en-IN', {
+            month: 'long',
+            year: 'numeric',
+          });
+
+          if (!groups[fullMonthName]) groups[fullMonthName] = [];
+          groups[fullMonthName].push(sch);
+
+          if (!monthlyStats[monthName]) {
+            monthlyStats[monthName] = { month: monthName, count: 0, volume: 0 };
+          }
+          monthlyStats[monthName].count += 1;
+          monthlyStats[monthName].volume += sch.amount;
         }
       });
 
-    return groups;
+    return {
+      monthlyChartData: Object.values(monthlyStats),
+      groupedCalendar: groups,
+    };
   }, [calendarFilter, trackerItems, savedIds]);
 
   return (
-    <div id="main-content" className="min-h-screen py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        
+    <div id="main-content" className="min-h-screen py-8 bg-bg text-text transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Onboarding Prompt Banner if profile is incomplete */}
         {!profile.isOnboarded && (
-          <div className="bg-accent/10 border border-accent/25 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-text">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-accent/20 text-accent flex items-center justify-center shrink-0">
-                <AlertCircle className="w-5 h-5" />
-              </div>
+          <aside
+            aria-label="Student profile incomplete notification"
+            className="border border-accent/30 bg-surface rounded-[4px] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-text"
+          >
+            <div className="flex items-center gap-2.5">
+              <WarningCircle size={20} className="text-accent shrink-0" />
               <div>
-                <h3 className="font-bold text-sm sm:text-base text-text">Complete Your Eligibility Profile</h3>
-                <p className="text-xs text-muted">
-                  Fill in your course, marks %, caste reservation category, and state to unlock verified scheme eligibility.
+                <h3 className="font-serif font-bold text-sm text-text">Complete Student Eligibility Dossier</h3>
+                <p className="font-sans text-xs text-muted">
+                  Specify academic scores, social category, and state of domicile to calibrate matching accuracy.
                 </p>
               </div>
             </div>
             <Link
               to="/profile"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white font-bold text-xs shrink-0 transition-opacity hover:opacity-90 shadow-xs min-h-[44px]"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] bg-primary text-primary-contrast font-semibold text-xs shrink-0 hover:opacity-90 transition-opacity min-h-[38px]"
             >
-              <span>Setup Profile</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Setup Dossier</span>
+              <ArrowRight size={13} />
             </Link>
-          </div>
+          </aside>
         )}
 
-        {/* GREETING & PROFILE COMPLETION BAR */}
-        <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-text tracking-tight">
-              Welcome back, {profile.name?.trim() ? profile.name.split(' ')[0] : 'Student'} 👋
-            </h1>
-            <p className="text-xs sm:text-sm text-muted">
-              Here is your funding pipeline, verified scheme matches, and upcoming application deadlines.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 bg-surface-2 p-3.5 rounded-2xl border border-border w-full sm:w-auto">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-extrabold text-sm border border-primary/20">
-              {profileCompletionPercent}%
-            </div>
+        {/* GREETING & LEAD NUMBER HERO BANNER */}
+        <div className="bg-surface rounded-[4px] border border-border p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-5 border-b border-border">
             <div>
-              <p className="text-xs font-bold text-text">Profile Readiness</p>
-              <p className="text-[11px] text-muted">
-                {profile.isOnboarded ? `${profile.category} • ${profile.state}` : 'Needs onboarding'}
+              <div className="flex items-center gap-2 text-muted text-[11px] font-mono uppercase tracking-widest font-semibold mb-1">
+                <span>Executive Student Briefing</span>
+                <span>•</span>
+                <span>Candidate Docket Ledger</span>
+              </div>
+              <h1 className="font-serif text-2xl sm:text-4xl font-black text-text tracking-tight">
+                Welcome back, {profile.name?.trim() ? profile.name.split(' ')[0] : 'Scholar'}
+              </h1>
+              <p className="font-sans text-xs sm:text-sm text-muted mt-0.5">
+                Financial dispatch summarizing qualified schemes, upcoming closing notices, and document verification.
               </p>
             </div>
-            <Link
-              to="/profile"
-              className="ml-auto text-xs font-bold text-primary hover:underline min-h-[36px] flex items-center"
-            >
-              Edit
-            </Link>
-          </div>
-        </div>
 
-        {/* METRICS ROW (Eligible Total Aid, Documents Readiness, Pipeline, Active Tracker) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          
-          {/* 1. Potential Funding Eligible For (Match >= 70%) */}
-          <div className="bg-primary text-primary-contrast p-6 rounded-3xl shadow-sm space-y-3">
-            <div className="flex items-center justify-between opacity-90">
-              <span className="text-xs font-bold uppercase tracking-wider">Eligible Funding</span>
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                {formatINR(eligibleTotalAmount)}
-              </p>
-              <p className="text-xs opacity-85 mt-1">
-                Across {eligibleCount} scholarships with &ge;70% match
-              </p>
-            </div>
-          </div>
-
-          {/* 2. Documents Readiness */}
-          <div className="bg-surface p-6 rounded-3xl border border-border shadow-xs space-y-3">
-            <div className="flex items-center justify-between text-muted">
-              <span className="text-xs font-bold uppercase tracking-wider">Documents Ready</span>
-              <FileText className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <div className="flex items-baseline justify-between">
-                <p className="text-2xl sm:text-3xl font-extrabold text-text">
-                  {documentReadiness.percent}%
+            {/* Profile Readiness Pill */}
+            <div className="flex items-center gap-3 bg-surface-2 p-3 rounded-[2px] border border-border w-full sm:w-auto">
+              <div className="w-9 h-9 rounded-[2px] bg-primary text-primary-contrast flex items-center justify-center font-mono font-bold text-xs">
+                {profileCompletionPercent}%
+              </div>
+              <div>
+                <p className="font-sans text-xs font-bold text-text">Dossier Readiness</p>
+                <p className="font-sans text-[11px] text-muted">
+                  {profile.isOnboarded ? `${profile.category} • ${profile.state}` : 'Onboarding pending'}
                 </p>
-                <span className="text-xs font-bold text-muted">
-                  {documentReadiness.totalGathered}/{documentReadiness.totalRequired} Docs
-                </span>
               </div>
-              <div className="w-full bg-surface-2 border border-border/50 h-2 rounded-full mt-2 overflow-hidden">
-                <div 
-                  className="bg-primary h-full rounded-full transition-all duration-300"
-                  style={{ width: `${documentReadiness.percent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Total in Tracker Pipeline */}
-          <div className="bg-surface p-6 rounded-3xl border border-border shadow-xs space-y-3">
-            <div className="flex items-center justify-between text-muted">
-              <span className="text-xs font-bold uppercase tracking-wider">Tracker Pipeline</span>
-              <KanbanSquare className="w-4 h-4 text-accent" />
-            </div>
-            <div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-text">
-                {pipelineCounts.totalTracked}
-              </p>
-              <p className="text-xs text-muted mt-1">
-                {pipelineCounts.applying} applying • {pipelineCounts.submitted} submitted
-              </p>
-            </div>
-          </div>
-
-          {/* 4. Total Secured / Awarded */}
-          <div className="bg-surface p-6 rounded-3xl border border-border shadow-xs space-y-3">
-            <div className="flex items-center justify-between text-muted">
-              <span className="text-xs font-bold uppercase tracking-wider">Awarded Grants</span>
-              <Award className="w-4 h-4 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-success">
-                {pipelineCounts.awarded}
-              </p>
-              <p className="text-xs text-muted mt-1">
-                Successfully secured schemes
-              </p>
-            </div>
-          </div>
-
-        </div>
-
-        {/* PIPELINE SUMMARY VISUAL BAR */}
-        <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-text">Application Pipeline Summary</h2>
-              <p className="text-xs text-muted">Active status distribution of your tracked scholarships.</p>
-            </div>
-            <Link to="/tracker" className="text-xs font-bold text-primary hover:underline flex items-center gap-1 min-h-[36px]">
-              <span>Open Kanban Board</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Multi-segment Stacked Progress Bar */}
-          <div className="w-full bg-surface-2 border border-border/50 h-3 rounded-full overflow-hidden flex">
-            {pipelineCounts.totalTracked > 0 ? (
-              <>
-                <div style={{ width: `${(pipelineCounts.saved / pipelineCounts.totalTracked) * 100}%` }} className="bg-muted" title={`Saved: ${pipelineCounts.saved}`} />
-                <div style={{ width: `${(pipelineCounts.applying / pipelineCounts.totalTracked) * 100}%` }} className="bg-accent" title={`Applying: ${pipelineCounts.applying}`} />
-                <div style={{ width: `${(pipelineCounts.submitted / pipelineCounts.totalTracked) * 100}%` }} className="bg-primary" title={`Submitted: ${pipelineCounts.submitted}`} />
-                <div style={{ width: `${(pipelineCounts.awarded / pipelineCounts.totalTracked) * 100}%` }} className="bg-success" title={`Awarded: ${pipelineCounts.awarded}`} />
-                <div style={{ width: `${(pipelineCounts.rejected / pipelineCounts.totalTracked) * 100}%` }} className="bg-danger" title={`Rejected: ${pipelineCounts.rejected}`} />
-              </>
-            ) : (
-              <div className="w-full bg-surface-2" />
-            )}
-          </div>
-
-          {/* Status Counts Legend */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
-            {[
-              { label: 'Saved', count: pipelineCounts.saved, color: 'bg-muted' },
-              { label: 'Applying', count: pipelineCounts.applying, color: 'bg-accent' },
-              { label: 'Submitted', count: pipelineCounts.submitted, color: 'bg-primary' },
-              { label: 'Awarded', count: pipelineCounts.awarded, color: 'bg-success' },
-              { label: 'Rejected', count: pipelineCounts.rejected, color: 'bg-danger' },
-            ].map(stage => (
-              <div key={stage.label} className="p-3 rounded-xl bg-surface-2 border border-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${stage.color}`} />
-                  <span className="text-xs font-semibold text-text">{stage.label}</span>
-                </div>
-                <span className="text-xs font-extrabold text-text">{stage.count}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 2-COLUMN SECTION: Upcoming Deadlines + Deadline Calendar/Timeline */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* UPCOMING DEADLINES (1 Col) */}
-          <section className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <h2 className="text-base font-bold text-text flex items-center gap-2">
-                <Clock className="w-4 h-4 text-accent" />
-                <span>Closing Soon (Next 5)</span>
-              </h2>
-              <Link to="/" className="text-xs font-bold text-primary hover:underline min-h-[36px] flex items-center">
-                View All
+              <Link
+                to="/profile"
+                className="ml-auto text-xs font-semibold text-primary hover:underline min-h-[36px] flex items-center"
+              >
+                Edit &rarr;
               </Link>
             </div>
+          </div>
 
-            <div className="divide-y divide-border">
-              {upcomingDeadlines.map(sch => {
-                const days = getDaysRemaining(sch.deadline);
-                const isCritical = days <= 7;
-                const isUrgent = days <= 14;
+          {/* OVERSIZED LEAD NUMBER: Total Potential Eligible Funding */}
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pt-1">
+            <div className="space-y-1">
+              <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-muted block">
+                Total Potential Funding Eligible For (Match &ge; 70%)
+              </span>
+              <div className="font-mono text-3xl sm:text-5xl font-black text-primary tracking-tight">
+                <CountUpNumber end={eligibleTotalAmount} prefix="₹" className="text-primary font-mono" />
+              </div>
+              <p className="font-sans text-xs text-muted">
+                Across {eligibleCount} qualifying government and corporate fellowship schemes
+              </p>
+            </div>
 
+            <div className="flex items-center gap-6 font-sans text-xs text-muted border-t sm:border-t-0 sm:border-l border-border pt-3 sm:pt-0 sm:pl-6">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider block text-muted">Dockets In Pipeline</span>
+                <span className="font-mono text-xl font-bold text-text">{pipelineCounts.totalTracked}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider block text-muted">Document Readiness</span>
+                <span className="font-mono text-xl font-bold text-text">{documentReadiness.percent}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3-COLUMN "BRIEFING" GRID SEPARATED BY THIN VERTICAL RULES */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border border border-border bg-surface rounded-[4px] overflow-hidden">
+          {/* COLUMN 1: Upcoming Critical Deadlines */}
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-1.5">
+                <Clock size={16} className="text-accent" />
+                <h2 className="font-serif text-base font-bold text-text">Critical Deadlines</h2>
+              </div>
+              <span className="font-mono text-[11px] text-muted font-bold">Next 5 Notices</span>
+            </div>
+
+            <div className="space-y-3">
+              {upcomingDeadlines.map((sch) => {
+                const info = formatDeadlineBadge(sch.deadline);
                 return (
-                  <div key={sch.id} className="py-3.5 space-y-1">
-                    <Link 
-                      to={`/scholarship/${sch.id}`}
-                      className="text-xs sm:text-sm font-bold text-text hover:text-primary transition-colors leading-snug line-clamp-1 block"
-                    >
-                      {sch.name}
-                    </Link>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted font-medium truncate max-w-[150px]">
-                        {sch.amountFormatted}
+                  <Link
+                    key={sch.id}
+                    to={`/scholarship/${sch.id}`}
+                    className="group block p-3 rounded-[2px] bg-surface-2 border border-border hover:border-primary/40 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-muted truncate">
+                        {sch.provider}
                       </span>
-                      <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
-                        isCritical 
-                          ? 'bg-danger/10 text-danger border border-danger/30' 
-                          : isUrgent 
-                          ? 'bg-accent/15 text-accent border border-accent/30' 
-                          : 'bg-surface-2 text-muted border border-border'
-                      }`}>
-                        {days === 0 ? 'Today' : `${days} days left`}
-                      </span>
+                      <div className="deadline-stamp text-[9px] py-0 px-1.5 shrink-0">
+                        {info.text}
+                      </div>
                     </div>
-                  </div>
+                    <p className="font-serif text-xs font-bold text-text group-hover:text-primary transition-colors line-clamp-1">
+                      {sch.name}
+                    </p>
+                    <div className="flex items-center justify-between pt-1.5 text-[11px] font-mono">
+                      <span className="font-bold text-primary">{sch.amountFormatted}</span>
+                      <span className="text-muted">{formatReadableDate(sch.deadline)}</span>
+                    </div>
+                  </Link>
                 );
               })}
             </div>
-          </section>
+          </div>
 
-          {/* DEADLINE CALENDAR / MONTHLY TIMELINE WIDGET (2 Cols) */}
-          <section className="lg:col-span-2 bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-xs space-y-6">
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
-              <div>
-                <h2 className="text-lg font-bold text-text flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-primary" />
-                  <span>Deadline Calendar & Timeline</span>
-                </h2>
-                <p className="text-xs text-muted mt-0.5">
-                  Monthly roadmap of official closing dates across verified Indian schemes.
-                </p>
+          {/* COLUMN 2: Application Pipeline & Documents Readiness */}
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-1.5">
+                <ChartBar size={16} className="text-primary" />
+                <h2 className="font-serif text-base font-bold text-text">Pipeline Distribution</h2>
               </div>
+              <Link to="/tracker" className="text-xs font-semibold text-primary hover:underline">
+                Docket &rarr;
+              </Link>
+            </div>
 
-              {/* Filter tabs: All vs Tracked Only */}
-              <div className="flex items-center gap-1.5 p-1 bg-surface-2 border border-border rounded-xl">
+            {/* Lazy-Loaded Pipeline Bar Chart */}
+            <React.Suspense
+              fallback={
+                <div className="h-44 w-full bg-surface-2 rounded-[2px] animate-pulse flex items-center justify-center text-xs text-muted">
+                  Loading pipeline...
+                </div>
+              }
+            >
+              <DashboardPipelineChart data={pipelineChartData} />
+            </React.Suspense>
+
+            {/* Documents Readiness Summary */}
+            <div className="pt-2 border-t border-border space-y-2">
+              <div className="flex items-center justify-between font-sans text-xs">
+                <span className="text-muted font-medium flex items-center gap-1">
+                  <FileText size={14} className="text-primary" /> Required Documents Readiness
+                </span>
+                <span className="font-mono font-bold text-text">{documentReadiness.percent}%</span>
+              </div>
+              <div className="w-full bg-surface-2 border border-border h-1.5 rounded-[2px] overflow-hidden">
+                <div
+                  className="bg-primary h-full transition-all duration-300"
+                  style={{ width: `${documentReadiness.percent}%` }}
+                />
+              </div>
+              <p className="font-sans text-[11px] text-muted text-right">
+                {documentReadiness.totalGathered} of {documentReadiness.totalRequired} documents verified
+              </p>
+            </div>
+          </div>
+
+          {/* COLUMN 3: Monthly Gazette Deadline Volume & Calendar */}
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-1.5">
+                <CalendarBlank size={16} className="text-primary" />
+                <h2 className="font-serif text-base font-bold text-text">Deadline Calendar</h2>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] font-sans">
                 <button
                   type="button"
                   onClick={() => setCalendarFilter('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[36px] ${
+                  className={`px-2 py-0.5 rounded-[2px] border ${
                     calendarFilter === 'all'
-                      ? 'bg-surface text-text shadow-2xs border border-border'
-                      : 'text-muted hover:text-text'
+                      ? 'bg-primary text-primary-contrast font-bold border-primary'
+                      : 'bg-surface text-muted border-border'
                   }`}
                 >
-                  All (24)
+                  All
                 </button>
                 <button
                   type="button"
                   onClick={() => setCalendarFilter('tracked')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[36px] ${
+                  className={`px-2 py-0.5 rounded-[2px] border ${
                     calendarFilter === 'tracked'
-                      ? 'bg-surface text-text shadow-2xs border border-border'
-                      : 'text-muted hover:text-text'
+                      ? 'bg-primary text-primary-contrast font-bold border-primary'
+                      : 'bg-surface text-muted border-border'
                   }`}
                 >
-                  Tracked ({Object.keys(trackerItems).length})
+                  Tracked
                 </button>
               </div>
             </div>
 
-            {/* Monthly grouped timeline */}
-            <div className="space-y-6 max-h-[380px] overflow-y-auto pr-1">
-              {Object.keys(groupedCalendar).length === 0 ? (
-                <div className="text-center py-10 text-xs text-muted">
-                  No upcoming deadlines found for this view.
-                </div>
-              ) : (
-                Object.entries(groupedCalendar).map(([monthName, list]) => (
-                  <div key={monthName} className="space-y-3">
-                    <div className="sticky top-0 bg-surface/95 backdrop-blur-xs py-1 z-10 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-primary" />
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-text">
-                        {monthName} ({list.length} deadlines)
-                      </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-4 border-l-2 border-border">
-                      {list.map(sch => {
-                        const days = getDaysRemaining(sch.deadline);
-                        const isCritical = days <= 7;
-                        const isUrgent = days <= 14;
-
-                        return (
-                          <Link
-                            key={sch.id}
-                            to={`/scholarship/${sch.id}`}
-                            className="p-3.5 rounded-2xl border border-border bg-surface-2 hover:border-primary/50 transition-all group shadow-2xs space-y-1.5"
-                          >
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="font-bold text-text">
-                                {formatReadableDate(sch.deadline)}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
-                                isCritical ? 'bg-danger/10 text-danger border border-danger/30' : isUrgent ? 'bg-accent/15 text-accent border border-accent/30' : 'bg-surface text-muted border border-border'
-                              }`}>
-                                {days} days left
-                              </span>
-                            </div>
-                            <p className="text-xs font-bold text-text group-hover:text-primary transition-colors line-clamp-1 leading-snug">
-                              {sch.name}
-                            </p>
-                            <p className="text-[11px] font-semibold text-primary">
-                              {sch.amountFormatted}
-                            </p>
-                          </Link>
-                        );
-                      })}
-                    </div>
+            {/* Lazy-Loaded Monthly Volume Distribution */}
+            {monthlyChartData.length > 0 && (
+              <React.Suspense
+                fallback={
+                  <div className="h-32 w-full bg-surface-2 rounded-[2px] animate-pulse flex items-center justify-center text-xs text-muted">
+                    Loading calendar volume...
                   </div>
-                ))
-              )}
+                }
+              >
+                <DashboardMonthlyChart data={monthlyChartData} />
+              </React.Suspense>
+            )}
+
+            {/* Monthly Accordion / Timeline list */}
+            <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+              {Object.keys(groupedCalendar).map((monthName) => (
+                <div key={monthName} className="space-y-1.5">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-muted block">
+                    {monthName} ({groupedCalendar[monthName].length})
+                  </span>
+                  <div className="space-y-1">
+                    {groupedCalendar[monthName].slice(0, 2).map((sch) => (
+                      <Link
+                        key={sch.id}
+                        to={`/scholarship/${sch.id}`}
+                        className="flex items-center justify-between p-2 rounded-[2px] bg-surface-2 border border-border text-xs hover:border-primary/40 transition-colors"
+                      >
+                        <span className="truncate pr-2 font-medium">{sch.name}</span>
+                        <span className="font-mono text-[10px] text-muted shrink-0">
+                          {sch.deadline.split('-').slice(1).join('/')}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-
-          </section>
-
+          </div>
         </div>
 
         {/* RECOMMENDED FOR YOU (Top 3 by Match) */}
-        <section className="space-y-4 pt-4">
-          <div className="flex items-center justify-between">
+        <section className="pt-4 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-border">
             <div>
-              <h2 className="text-xl font-bold text-text flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span>Recommended For You</span>
+              <h2 className="font-serif text-xl font-bold text-text flex items-center gap-2">
+                <Sparkle size={18} className="text-primary" />
+                <span>Recommended For Your Dossier</span>
               </h2>
-              <p className="text-xs text-muted">
-                Top opportunities based on your education level ({profile.level}), category ({profile.category}), and state ({profile.state}).
+              <p className="font-sans text-xs text-muted">
+                Top 3 opportunities ranked by institutional compatibility score.
               </p>
             </div>
-            <Link to="/" className="text-xs font-bold text-primary hover:underline flex items-center gap-1 min-h-[36px]">
-              <span>View All 24 Schemes</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+            <Link to="/" className="text-xs font-semibold text-primary hover:underline min-h-[36px] flex items-center">
+              Explore All Gazette Schemes &rarr;
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recommendedScholarships.map(sch => (
-              <ScholarshipCard key={sch.id} scholarship={sch} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {recommendedScholarships.map((s) => (
+              <ScholarshipCard key={s.id} scholarship={s} />
             ))}
           </div>
         </section>
-
       </div>
     </div>
   );

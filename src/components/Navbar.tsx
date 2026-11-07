@@ -1,34 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  GraduationCap, 
-  Bookmark, 
-  KanbanSquare, 
-  LayoutDashboard, 
-  User, 
-  Menu, 
-  X,
-  Compass,
-  Moon,
-  Sun,
-  Columns
-} from 'lucide-react';
+import { BookmarkSimple } from '@phosphor-icons/react/dist/csr/BookmarkSimple';
+import { Kanban } from '@phosphor-icons/react/dist/csr/Kanban';
+import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour';
+import { User } from '@phosphor-icons/react/dist/csr/User';
+import { List } from '@phosphor-icons/react/dist/csr/List';
+import { X } from '@phosphor-icons/react/dist/csr/X';
+import { Compass } from '@phosphor-icons/react/dist/csr/Compass';
+import { Moon } from '@phosphor-icons/react/dist/csr/Moon';
+import { Sun } from '@phosphor-icons/react/dist/csr/Sun';
+import { ArrowsLeftRight } from '@phosphor-icons/react/dist/csr/ArrowsLeftRight';
+import { MagnifyingGlass } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../context/ThemeContext';
+
+const CommandPalette = React.lazy(() =>
+  import('./CommandPalette').then((m) => ({ default: m.CommandPalette }))
+);
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
   const { savedIds, trackerItems, profile, compareIds } = useApp();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const trackerCount = Object.keys(trackerItems).length;
 
+  const todayFormatted = new Intl.DateTimeFormat('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date());
+
   const navLinks = [
     { to: '/', label: 'Discover', icon: Compass },
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/tracker', label: 'Tracker', icon: KanbanSquare, badge: trackerCount > 0 ? trackerCount : undefined },
-    { to: '/compare', label: 'Compare', icon: Columns, badge: compareIds.length > 0 ? compareIds.length : undefined },
+    { to: '/dashboard', label: 'Dashboard', icon: SquaresFour },
+    { to: '/tracker', label: 'Tracker', icon: Kanban, badge: trackerCount > 0 ? trackerCount : undefined },
+    { to: '/compare', label: 'Compare', icon: ArrowsLeftRight, badge: compareIds.length > 0 ? compareIds.length : undefined },
     { to: '/profile', label: 'Profile', icon: User },
   ];
 
@@ -42,149 +63,183 @@ export const Navbar: React.FC = () => {
       {/* Skip to Main Content Link for Keyboard Accessibility */}
       <a 
         href="#main-content" 
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-50 bg-primary text-primary-contrast px-4 py-2.5 rounded-xl font-bold text-xs shadow-2xl focus:outline-none focus:ring-2 focus:ring-primary"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 z-50 bg-primary text-primary-contrast px-3 py-1.5 rounded-[2px] font-sans text-xs uppercase tracking-wider font-bold shadow-md focus:outline-none focus:ring-2 focus:ring-primary"
       >
         Skip to main content
       </a>
 
-      <header className="sticky top-0 z-40 bg-bg/90 backdrop-blur-md border-b border-border transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            
-            {/* Logo & Brand */}
-            <Link 
-              to="/" 
-              className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-primary rounded-xl p-1"
-              aria-label="Grantly Home"
-            >
-              <div className="w-11 h-11 rounded-xl bg-primary text-primary-contrast flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform duration-200">
-                <GraduationCap className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-2xl tracking-tight text-primary">
-                  GRANTLY
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-muted -mt-1">
-                  Scholarships
-                </span>
-              </div>
-            </Link>
+      {/* Global Command Palette (Ctrl+K) */}
+      {commandPaletteOpen && (
+        <React.Suspense fallback={null}>
+          <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+        </React.Suspense>
+      )}
 
-            {/* Desktop Nav Links */}
-            <nav className="hidden md:flex items-center gap-1" aria-label="Main Navigation">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const active = isActive(link.to);
-                return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 min-h-[44px] ${
-                      active
-                        ? 'bg-primary text-primary-contrast shadow-xs'
-                        : 'text-text hover:bg-surface-2'
-                    }`}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    <Icon className={`w-4 h-4 ${active ? 'text-primary-contrast' : 'text-muted'}`} />
-                    <span>{link.label}</span>
-                    {link.badge !== undefined && (
-                      <span 
-                        className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                          active 
-                            ? 'bg-primary-contrast/20 text-primary-contrast' 
-                            : 'bg-surface-2 text-text border border-border'
-                        }`}
-                      >
-                        {link.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
+      <header className="bg-bg text-text transition-colors">
+        {/* Top Newspaper Masthead Strip */}
+        <div className="border-b border-border bg-surface/50 text-xs py-1.5 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 overflow-hidden text-muted text-[11px] font-mono tracking-tight">
+              <span className="font-semibold text-text uppercase shrink-0">{todayFormatted}</span>
+              <span className="hidden sm:inline text-border">/</span>
+              <span className="hidden sm:inline truncate">Official National Higher Education Financial Gazette</span>
+            </div>
 
-            {/* Right actions: Dark Mode toggle + Saved Pill + Profile button */}
-            <div className="hidden md:flex items-center gap-2.5">
-              
-              {/* Dark Mode Toggle Button */}
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Command Palette Trigger */}
+              <button
+                type="button"
+                onClick={() => setCommandPaletteOpen(true)}
+                className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-[2px] border border-border bg-surface hover:bg-surface-2 text-muted hover:text-text text-[11px] transition-colors focus-visible:outline-none"
+                aria-label="Open command palette (Ctrl+K)"
+              >
+                <MagnifyingGlass size={13} className="text-muted" />
+                <span className="font-sans">Search Gazette</span>
+                <kbd className="font-mono text-[9px] px-1 py-0.5 rounded-[2px] bg-surface-2 border border-border">Ctrl+K</kbd>
+              </button>
+
+              {/* Theme Switcher */}
               <button
                 type="button"
                 onClick={toggleDarkMode}
-                className="w-10 h-10 rounded-xl border border-border bg-surface hover:bg-surface-2 text-text flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-primary"
-                aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-[2px] border border-border bg-surface hover:bg-surface-2 text-text text-[11px] transition-colors focus-visible:outline-none"
+                aria-label={isDarkMode ? 'Switch to light broadsheet' : 'Switch to night edition'}
               >
                 {isDarkMode ? (
-                  <Sun className="w-4 h-4 text-accent" />
+                  <>
+                    <Sun size={13} className="text-accent" />
+                    <span className="hidden md:inline font-mono">Day</span>
+                  </>
                 ) : (
-                  <Moon className="w-4 h-4 text-muted" />
+                  <>
+                    <Moon size={13} className="text-muted" />
+                    <span className="hidden md:inline font-mono">Night</span>
+                  </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
 
-              {/* Saved items bookmark pill */}
+        {/* Newspaper Center Masthead Wordmark */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex items-center justify-between">
+            <Link 
+              to="/" 
+              className="flex flex-col group focus:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-[2px]"
+              aria-label="Grantly Home"
+            >
+              <div className="flex items-baseline gap-2.5">
+                <span className="font-serif text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-text leading-none group-hover:text-primary transition-colors">
+                  THE GRANTLY GAZETTE
+                </span>
+                <span className="hidden sm:inline-block w-2 h-2 rounded-full bg-accent" />
+              </div>
+              <p className="font-sans text-[11px] uppercase tracking-widest text-muted mt-1 font-semibold">
+                Verified Indian Scholarship & Fellowship Gazette • Est. 2026
+              </p>
+            </Link>
+
+            {/* Quick Status Pill (Saved & Profile) */}
+            <div className="hidden lg:flex items-center gap-3">
               <Link
                 to="/tracker"
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border bg-surface hover:bg-surface-2 text-text text-xs font-semibold shadow-2xs transition-all min-h-[44px]"
-                title="Saved Scholarships"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-[2px] border border-border bg-surface hover:bg-surface-2 text-text text-xs transition-colors"
                 aria-label={`Saved scholarships (${savedIds.length})`}
               >
-                <Bookmark className={`w-4 h-4 ${savedIds.length > 0 ? 'text-accent fill-accent' : 'text-muted'}`} />
-                <span>Saved</span>
-                <span className="w-5 h-5 flex items-center justify-center rounded-full bg-surface-2 text-[11px] font-bold border border-border">
+                <BookmarkSimple size={15} className={savedIds.length > 0 ? 'text-accent fill-accent' : 'text-muted'} />
+                <span className="font-medium">Docket</span>
+                <span className="font-mono text-[11px] font-bold px-1.5 py-0.2 rounded-[2px] bg-surface-2 border border-border">
                   {savedIds.length}
                 </span>
               </Link>
 
-              {/* Profile pill */}
               <Link
                 to="/profile"
-                className="flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full border border-border bg-surface hover:bg-surface-2 transition-colors min-h-[44px]"
-                aria-label="View or edit student profile"
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-[2px] border border-border bg-surface hover:bg-surface-2 transition-colors"
+                aria-label="Student profile status"
               >
-                <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold border border-primary/20">
-                  {profile.name?.trim() ? profile.name.charAt(0) : 'P'}
+                <div className="w-5 h-5 rounded-[2px] bg-primary text-primary-contrast flex items-center justify-center text-[10px] font-bold font-mono">
+                  {profile.name?.trim() ? profile.name.charAt(0).toUpperCase() : 'S'}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-bold text-text leading-none">
+                  <p className="text-xs font-semibold leading-none text-text">
                     {profile.name?.trim() ? profile.name.split(' ')[0] : 'Profile'}
                   </p>
-                  <p className="text-[10px] text-primary font-medium leading-tight">
-                    {profile.isOnboarded ? 'Match Active' : 'Set Up'}
+                  <p className="text-[10px] text-primary font-medium mt-0.5">
+                    {profile.isOnboarded ? 'Verified' : 'Incomplete'}
                   </p>
                 </div>
               </Link>
-
             </div>
 
-            {/* Mobile Actions: Dark Mode toggle + Menu Button */}
-            <div className="flex md:hidden items-center gap-2">
+            {/* Mobile Menu Button */}
+            <div className="flex lg:hidden items-center gap-2">
               <button
                 type="button"
-                onClick={toggleDarkMode}
-                className="p-2 rounded-xl border border-border text-text"
-                aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                onClick={() => setCommandPaletteOpen(true)}
+                className="p-2 border border-border rounded-[2px] text-muted hover:text-text"
+                aria-label="Search"
               >
-                {isDarkMode ? <Sun className="w-5 h-5 text-accent" /> : <Moon className="w-5 h-5 text-muted" />}
+                <MagnifyingGlass size={18} />
               </button>
-
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2.5 rounded-xl text-text hover:bg-surface-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="p-2 border border-border rounded-[2px] text-text hover:bg-surface-2 focus:outline-none focus:ring-1 focus:ring-primary min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-expanded={mobileMenuOpen}
                 aria-label="Toggle navigation menu"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {mobileMenuOpen ? <X size={20} /> : <List size={20} />}
               </button>
             </div>
-
           </div>
         </div>
 
-        {/* Mobile Drawer Menu */}
+        {/* Double Rule Masthead Navigation Bar */}
+        <div className="border-y-2 border-double border-border-strong bg-surface">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="hidden lg:flex items-center justify-between text-xs tracking-wider uppercase font-semibold font-sans" aria-label="Main Navigation">
+              <div className="flex items-center">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const active = isActive(link.to);
+                  return (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className={`flex items-center gap-2 px-4 py-3.5 border-r border-border transition-colors min-h-[44px] relative ${
+                        active
+                          ? 'text-primary bg-surface-2 font-bold'
+                          : 'text-text hover:bg-surface-2/60'
+                      }`}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      <Icon size={15} className={active ? 'text-primary' : 'text-muted'} />
+                      <span>{link.label}</span>
+                      {link.badge !== undefined && (
+                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-[2px] bg-primary text-primary-contrast font-bold">
+                          {link.badge}
+                        </span>
+                      )}
+                      {active && (
+                        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-4 text-[11px] text-muted normal-case font-mono py-2">
+                <span>Free & Open Access for Indian Scholars</span>
+              </div>
+            </nav>
+          </div>
+        </div>
+
+        {/* Mobile Nav Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-bg px-4 pt-3 pb-6 space-y-2">
+          <div className="lg:hidden border-b border-border bg-surface px-4 py-4 space-y-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const active = isActive(link.to);
@@ -193,47 +248,22 @@ export const Navbar: React.FC = () => {
                   key={link.to}
                   to={link.to}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold min-h-[44px] ${
-                    active 
-                      ? 'bg-primary text-primary-contrast' 
-                      : 'text-text hover:bg-surface-2'
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-[2px] text-sm font-medium min-h-[44px] ${
+                    active ? 'bg-primary text-primary-contrast' : 'text-text hover:bg-surface-2'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5" />
+                    <Icon size={18} />
                     <span>{link.label}</span>
                   </div>
                   {link.badge !== undefined && (
-                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                      active ? 'bg-primary-contrast/20 text-primary-contrast' : 'bg-surface-2 text-text border border-border'
-                    }`}>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-[2px] bg-surface-2 text-text border border-border">
                       {link.badge}
                     </span>
                   )}
                 </Link>
               );
             })}
-            
-            <div className="pt-3 border-t border-border flex items-center justify-between">
-              <Link
-                to="/profile"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 text-text font-medium"
-              >
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs border border-primary/20">
-                  {profile.name?.trim() ? profile.name.charAt(0) : 'P'}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-text">{profile.name?.trim() || 'My Profile'}</p>
-                  <p className="text-[10px] text-muted">
-                    {profile.isOnboarded ? `${profile.level} • ${profile.course}` : 'Set up your student profile'}
-                  </p>
-                </div>
-              </Link>
-              <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                Saved ({savedIds.length})
-              </div>
-            </div>
           </div>
         )}
       </header>

@@ -1,16 +1,13 @@
 import React from 'react';
-import { 
-  Filter, 
-  RotateCcw, 
-  IndianRupee, 
-  Calendar, 
-  GraduationCap, 
-  Tag, 
-  Check, 
-  Sparkles, 
-  Bookmark,
-  MapPin
-} from 'lucide-react';
+import { Faders } from '@phosphor-icons/react/dist/csr/Faders';
+import { ArrowCounterClockwise } from '@phosphor-icons/react/dist/csr/ArrowCounterClockwise';
+import { GraduationCap } from '@phosphor-icons/react/dist/csr/GraduationCap';
+import { Tag } from '@phosphor-icons/react/dist/csr/Tag';
+import { Check } from '@phosphor-icons/react/dist/csr/Check';
+import { BookmarkSimple } from '@phosphor-icons/react/dist/csr/BookmarkSimple';
+import { MapPin } from '@phosphor-icons/react/dist/csr/MapPin';
+import { CalendarBlank } from '@phosphor-icons/react/dist/csr/CalendarBlank';
+import { CurrencyInr } from '@phosphor-icons/react/dist/csr/CurrencyInr';
 import type { FilterState } from '../types';
 import { ALL_CATEGORIES, ALL_LEVELS, INDIAN_STATES } from '../data/scholarships';
 
@@ -48,61 +45,61 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     onlyHighMatch;
 
   return (
-    <aside className="w-full lg:w-72 shrink-0 space-y-6" aria-label="Filters">
-      
-      {/* Header & Reset */}
-      <div className="bg-surface rounded-2xl border border-border p-5 shadow-xs">
-        <div className="flex items-center justify-between pb-4 border-b border-border">
+    <aside className="w-full lg:w-72 shrink-0 space-y-4" aria-label="Filters">
+      <div className="bg-surface rounded-[4px] border border-border p-5 shadow-xs">
+        
+        {/* Header & Reset */}
+        <div className="flex items-center justify-between pb-3.5 border-b border-border">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-primary" />
-            <h2 className="text-base font-bold text-text">Filters</h2>
+            <Faders size={16} className="text-primary" />
+            <div>
+              <h2 className="font-serif text-base font-bold text-text">Dossier Filters</h2>
+              <span className="font-mono text-[10px] text-muted">{filteredCount} of {totalCount} indexed</span>
+            </div>
           </div>
           {isFiltered && (
             <button
               type="button"
               onClick={onReset}
-              className="text-xs font-semibold text-muted hover:text-text flex items-center gap-1 transition-colors"
+              className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 transition-colors min-h-[36px]"
             >
-              <RotateCcw className="w-3 h-3" />
+              <ArrowCounterClockwise size={13} />
               <span>Reset</span>
             </button>
           )}
         </div>
 
         {/* Quick Toggles: High Match & Saved Only */}
-        <div className="pt-4 space-y-2.5">
-          <label className="flex items-center justify-between p-2.5 rounded-xl border border-border hover:bg-surface-2 cursor-pointer transition-colors">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold text-text">High Match (&gt;75%)</span>
-            </div>
+        <div className="pt-4 space-y-2">
+          <label className="flex items-center justify-between p-2.5 rounded-[2px] border border-border hover:bg-surface-2 cursor-pointer transition-colors">
+            <span className="text-xs font-medium text-text">Match Score &gt; 75%</span>
             <input
               type="checkbox"
               checked={onlyHighMatch}
               onChange={onToggleOnlyHighMatch}
-              className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary"
+              className="w-4 h-4 rounded-[2px] text-primary focus:ring-primary accent-primary"
             />
           </label>
 
-          <label className="flex items-center justify-between p-2.5 rounded-xl border border-border hover:bg-surface-2 cursor-pointer transition-colors">
-            <div className="flex items-center gap-2">
-              <Bookmark className="w-4 h-4 text-accent" />
-              <span className="text-xs font-semibold text-text">Saved Scholarships</span>
+          <label className="flex items-center justify-between p-2.5 rounded-[2px] border border-border hover:bg-surface-2 cursor-pointer transition-colors">
+            <div className="flex items-center gap-1.5">
+              <BookmarkSimple size={14} className="text-accent" />
+              <span className="text-xs font-medium text-text">Saved Schemes</span>
             </div>
             <input
               type="checkbox"
               checked={onlySaved}
               onChange={onToggleOnlySaved}
-              className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary"
+              className="w-4 h-4 rounded-[2px] text-primary focus:ring-primary accent-primary"
             />
           </label>
         </div>
 
         {/* Education Level Filter */}
-        <div className="pt-5 border-t border-border mt-5">
-          <label className="flex items-center gap-2 text-xs font-bold text-text uppercase tracking-wider mb-2.5">
-            <GraduationCap className="w-3.5 h-3.5 text-muted" />
-            <span>Course Level</span>
+        <div className="pt-4 border-t border-border mt-4">
+          <label className="flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-wider text-muted mb-2">
+            <GraduationCap size={13} className="text-muted" />
+            <span>Academic Level</span>
           </label>
           <div className="space-y-1">
             {ALL_LEVELS.map((level) => (
@@ -110,55 +107,55 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 key={level}
                 type="button"
                 onClick={() => onChange({ level })}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[2px] text-xs font-medium transition-colors ${
                   filters.level === level
-                    ? 'bg-primary text-primary-contrast font-semibold shadow-xs'
+                    ? 'bg-primary text-primary-contrast font-semibold'
                     : 'text-text hover:bg-surface-2'
                 }`}
               >
                 <span>{level}</span>
-                {filters.level === level && <Check className="w-3.5 h-3.5" />}
+                {filters.level === level && <Check size={13} />}
               </button>
             ))}
           </div>
         </div>
 
         {/* Scheme Category Filter */}
-        <div className="pt-5 border-t border-border mt-5">
-          <label className="flex items-center gap-2 text-xs font-bold text-text uppercase tracking-wider mb-2.5">
-            <Tag className="w-3.5 h-3.5 text-muted" />
+        <div className="pt-4 border-t border-border mt-4">
+          <label className="flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-wider text-muted mb-2">
+            <Tag size={13} className="text-muted" />
             <span>Scheme Type</span>
           </label>
-          <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
+          <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
             {ALL_CATEGORIES.map((category) => (
               <button
                 key={category}
                 type="button"
                 onClick={() => onChange({ category })}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[2px] text-xs font-medium transition-colors ${
                   filters.category === category
-                    ? 'bg-primary text-primary-contrast font-semibold shadow-xs'
+                    ? 'bg-primary text-primary-contrast font-semibold'
                     : 'text-text hover:bg-surface-2'
                 }`}
               >
                 <span className="truncate">{category}</span>
-                {filters.category === category && <Check className="w-3.5 h-3.5 shrink-0" />}
+                {filters.category === category && <Check size={13} className="shrink-0" />}
               </button>
             ))}
           </div>
         </div>
 
         {/* State / Domicile Filter */}
-        <div className="pt-5 border-t border-border mt-5">
-          <label htmlFor="filter-state" className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wider mb-2">
-            <MapPin className="w-3.5 h-3.5 text-muted" />
-            <span>State of Domicile</span>
+        <div className="pt-4 border-t border-border mt-4">
+          <label htmlFor="filter-state" className="flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-wider text-muted mb-2">
+            <MapPin size={13} className="text-muted" />
+            <span>State / Domicile</span>
           </label>
           <select
             id="filter-state"
             value={filters.state}
             onChange={(e) => onChange({ state: e.target.value })}
-            className="w-full px-3 py-2.5 rounded-xl border border-border text-xs font-semibold text-text bg-surface-2 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
+            className="w-full px-3 py-2 rounded-[2px] border border-border text-xs font-medium text-text bg-surface focus:outline-none focus:ring-1 focus:ring-primary min-h-[44px]"
           >
             {INDIAN_STATES.map((st) => (
               <option key={st} value={st} className="bg-surface text-text">{st}</option>
@@ -167,88 +164,58 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         </div>
 
         {/* Minimum Award in INR */}
-        <div className="pt-5 border-t border-border mt-5">
+        <div className="pt-4 border-t border-border mt-4">
           <div className="flex items-center justify-between mb-2">
-            <label className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wider">
-              <IndianRupee className="w-3.5 h-3.5 text-muted" />
+            <label className="flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-wider text-muted">
+              <CurrencyInr size={13} className="text-muted" />
               <span>Min Amount</span>
             </label>
-            <span className="text-xs font-extrabold text-primary">
+            <span className="font-mono text-xs font-bold text-primary">
               {filters.minAmount > 0 ? `₹${(filters.minAmount / 1000).toLocaleString('en-IN')}k+` : 'Any'}
             </span>
           </div>
           <input
             type="range"
-            min="0"
-            max="200000"
-            step="10000"
+            min={0}
+            max={200000}
+            step={10000}
             value={filters.minAmount}
-            onChange={(e) => onChange({ minAmount: parseInt(e.target.value, 10) })}
-            className="w-full accent-primary cursor-pointer"
-            aria-label="Filter by minimum scholarship amount in INR"
+            onChange={(e) => onChange({ minAmount: Number(e.target.value) })}
+            className="w-full h-1.5 bg-surface-2 rounded-lg appearance-none cursor-pointer accent-primary"
+            aria-label="Filter by minimum scholarship amount"
           />
-          <div className="flex justify-between text-[10px] text-muted mt-1">
-            <span>₹0</span>
-            <span>₹1.0 Lakh</span>
-            <span>₹2.0 Lakh+</span>
-          </div>
-
-          {/* Quick Amount Buttons */}
-          <div className="grid grid-cols-4 gap-1.5 mt-3">
-            {[0, 25000, 50000, 100000].map((amt) => (
-              <button
-                key={amt}
-                type="button"
-                onClick={() => onChange({ minAmount: amt })}
-                className={`py-1.5 rounded-lg text-[11px] font-semibold border transition-colors min-h-[36px] ${
-                  filters.minAmount === amt
-                    ? 'border-primary bg-primary text-primary-contrast'
-                    : 'border-border text-text hover:bg-surface-2'
-                }`}
-              >
-                {amt === 0 ? 'All' : `₹${amt / 1000}k`}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Deadline Urgency */}
-        <div className="pt-5 border-t border-border mt-5">
-          <label className="flex items-center gap-1.5 text-xs font-bold text-text uppercase tracking-wider mb-2.5">
-            <Calendar className="w-3.5 h-3.5 text-muted" />
+        {/* Deadline Range Filter */}
+        <div className="pt-4 border-t border-border mt-4">
+          <label className="flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-wider text-muted mb-2">
+            <CalendarBlank size={13} className="text-muted" />
             <span>Deadline Window</span>
           </label>
           <div className="grid grid-cols-2 gap-1.5">
             {[
               { id: 'all', label: 'All Dates' },
-              { id: '30-days', label: 'Within 30 Days' },
-              { id: '60-days', label: 'Within 60 Days' },
-              { id: '90-days', label: 'Within 90 Days' },
-            ].map((d) => (
+              { id: 'week', label: 'Under 7 Days' },
+              { id: 'month', label: 'Under 30 Days' },
+              { id: 'quarter', label: '90+ Days' },
+            ].map((option) => (
               <button
-                key={d.id}
+                key={option.id}
                 type="button"
-                onClick={() => onChange({ deadlineRange: d.id as FilterState['deadlineRange'] })}
-                className={`p-2.5 rounded-xl text-xs font-medium border text-center transition-colors min-h-[44px] ${
-                  filters.deadlineRange === d.id
-                    ? 'border-primary bg-primary text-primary-contrast font-semibold shadow-xs'
-                    : 'border-border text-text hover:bg-surface-2'
+                onClick={() => onChange({ deadlineRange: option.id as FilterState['deadlineRange'] })}
+                className={`px-2 py-1.5 rounded-[2px] text-xs font-medium border text-center transition-colors min-h-[38px] ${
+                  filters.deadlineRange === option.id
+                    ? 'bg-primary text-primary-contrast border-primary font-semibold'
+                    : 'bg-surface border-border text-text hover:bg-surface-2'
                 }`}
               >
-                {d.label}
+                {option.label}
               </button>
             ))}
           </div>
         </div>
 
       </div>
-
-      {/* Side summary box */}
-      <div className="bg-surface-2 rounded-2xl p-4 border border-border text-xs text-text shadow-xs">
-        <p className="font-bold text-primary mb-1">Scholarships Found</p>
-        <p className="text-muted">Showing <span className="font-bold text-text">{filteredCount}</span> of <span className="font-bold text-text">{totalCount}</span> active schemes matching your criteria.</p>
-      </div>
-
     </aside>
   );
 };

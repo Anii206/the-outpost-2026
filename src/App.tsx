@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { AppProvider } from './context/AppContext';
@@ -6,13 +7,42 @@ import { ToastProvider } from './context/ToastContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { UrgentDeadlinesBanner } from './components/UrgentDeadlinesBanner';
-import { DiscoverPage } from './pages/DiscoverPage';
-import { ScholarshipDetailPage } from './pages/ScholarshipDetailPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { TrackerPage } from './pages/TrackerPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { ComparePage } from './pages/ComparePage';
-import { NotFoundPage } from './pages/NotFoundPage';
+
+const DiscoverPage = React.lazy(() =>
+  import('./pages/DiscoverPage').then((m) => ({ default: m.DiscoverPage }))
+);
+const ScholarshipDetailPage = React.lazy(() =>
+  import('./pages/ScholarshipDetailPage').then((m) => ({ default: m.ScholarshipDetailPage }))
+);
+const ProfilePage = React.lazy(() =>
+  import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage }))
+);
+const TrackerPage = React.lazy(() =>
+  import('./pages/TrackerPage').then((m) => ({ default: m.TrackerPage }))
+);
+const DashboardPage = React.lazy(() =>
+  import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage }))
+);
+const ComparePage = React.lazy(() =>
+  import('./pages/ComparePage').then((m) => ({ default: m.ComparePage }))
+);
+const NotFoundPage = React.lazy(() =>
+  import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
+);
+
+function RouteSkeletonFallback() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6 animate-pulse">
+      <div className="h-8 w-64 bg-surface-2 rounded-[2px]" />
+      <div className="h-4 w-96 bg-surface-2 rounded-[2px]" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+        <div className="h-64 bg-surface-2 rounded-[2px]" />
+        <div className="h-64 bg-surface-2 rounded-[2px]" />
+        <div className="h-64 bg-surface-2 rounded-[2px]" />
+      </div>
+    </div>
+  );
+}
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -35,15 +65,17 @@ function AnimatedRoutes() {
         transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
         className="flex-1"
       >
-        <Routes location={location}>
-          <Route path="/" element={<DiscoverPage />} />
-          <Route path="/scholarship/:id" element={<ScholarshipDetailPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/tracker" element={<TrackerPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/compare" element={<ComparePage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Suspense fallback={<RouteSkeletonFallback />}>
+          <Routes location={location}>
+            <Route path="/" element={<DiscoverPage />} />
+            <Route path="/scholarship/:id" element={<ScholarshipDetailPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/tracker" element={<TrackerPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/compare" element={<ComparePage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </motion.div>
     </AnimatePresence>
   );

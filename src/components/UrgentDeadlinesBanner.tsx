@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, ArrowRight, X } from 'lucide-react';
+import { Clock } from '@phosphor-icons/react/dist/csr/Clock';
+import { ArrowRight } from '@phosphor-icons/react/dist/csr/ArrowRight';
+import { X } from '@phosphor-icons/react/dist/csr/X';
 import { useApp } from '../context/AppContext';
 import { SCHOLARSHIPS } from '../data/scholarships';
 import { getDaysRemaining } from '../utils/dateUtils';
@@ -26,42 +28,39 @@ export const UrgentDeadlinesBanner: React.FC = () => {
 
   return (
     <aside 
-      className="bg-danger/10 border-b border-danger/30 py-2.5 px-4 text-xs font-semibold text-danger transition-colors"
+      className="bg-accent/10 border-b border-accent/25 py-2 px-4 text-xs font-medium text-accent transition-colors"
       aria-label="Urgent deadline notification"
       role="alert"
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-        
         <div className="flex items-center gap-2 overflow-hidden">
-          <span className="w-2 h-2 rounded-full bg-danger animate-ping shrink-0" />
-          <Clock className="w-4 h-4 text-danger shrink-0" />
-          <p className="truncate">
-            <span className="font-extrabold uppercase tracking-wider text-danger">
-              Urgent Deadline ({daysLeft === 0 ? 'Today' : `${daysLeft} days left`}):
+          <Clock size={15} className="text-accent shrink-0" />
+          <p className="truncate font-sans text-xs">
+            <span className="font-bold uppercase tracking-wider text-accent">
+              Urgent Docket Alert ({daysLeft === 0 ? 'Closes Today' : `${daysLeft} days remaining`}):
             </span>{' '}
-            <span className="font-bold">{urgentItem.name}</span> in your tracker is closing soon!
+            <span className="font-semibold text-text">{urgentItem.name}</span> in your docket requires immediate submission.
           </p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           <Link
             to={`/scholarship/${urgentItem.id}`}
-            className="flex items-center gap-1 text-xs font-bold text-danger hover:underline min-h-[36px]"
+            className="flex items-center gap-1 text-xs font-bold text-accent hover:underline min-h-[36px]"
           >
-            <span>Review Documents</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Review Checklist</span>
+            <ArrowRight size={13} />
           </Link>
 
           <button
             type="button"
             onClick={() => setIsDismissed(true)}
-            className="p-1 rounded-md text-danger hover:bg-danger/20 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+            className="p-1 rounded-[2px] text-accent hover:bg-accent/20 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
             aria-label="Dismiss deadline alert"
           >
-            <X className="w-3.5 h-3.5" />
+            <X size={15} />
           </button>
         </div>
-
       </div>
     </aside>
   );
