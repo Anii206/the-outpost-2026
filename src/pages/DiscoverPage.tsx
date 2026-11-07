@@ -19,6 +19,7 @@ import { SkeletonCard } from '../components/SkeletonCard';
 import { EmptyState } from '../components/EmptyState';
 import { CompareFloatingBar } from '../components/CompareFloatingBar';
 import { EligibilityFinderModal } from '../components/EligibilityFinderModal';
+import { ShareShortlistButton } from '../components/ShareShortlistButton';
 import { CountUpNumber } from '../components/CountUpNumber';
 import { getDaysRemaining, formatDeadlineBadge } from '../utils/dateUtils';
 import { RupeeCoinStackIllustration, StampedDocumentIllustration } from '../components/illustrations/EditorialIllustrations';
@@ -447,7 +448,9 @@ export const DiscoverPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {onlySaved && <ShareShortlistButton />}
+
             {/* Mobile Filter Button */}
             <button
               type="button"

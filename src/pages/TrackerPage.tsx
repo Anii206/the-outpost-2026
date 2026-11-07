@@ -15,6 +15,7 @@ import { SCHOLARSHIPS } from '../data/scholarships';
 import type { TrackerStatus } from '../types';
 import { formatDeadlineBadge } from '../utils/dateUtils';
 import { fireAwardedConfetti } from '../utils/confetti';
+import { ShareShortlistButton } from '../components/ShareShortlistButton';
 
 interface ColumnDef {
   id: TrackerStatus;
@@ -144,13 +145,16 @@ export const TrackerPage: React.FC = () => {
             </p>
           </div>
 
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[2px] bg-primary text-primary-contrast text-xs font-semibold hover:opacity-90 transition-opacity self-start sm:self-auto min-h-[44px]"
-          >
-            <Plus size={14} />
-            <span>Discover More Schemes</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+            <ShareShortlistButton />
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[2px] bg-primary text-primary-contrast text-xs font-semibold hover:opacity-90 transition-opacity min-h-[44px]"
+            >
+              <Plus size={14} />
+              <span>Discover More Schemes</span>
+            </Link>
+          </div>
         </div>
 
         {/* Mobile Horizontal Tab Switcher */}
